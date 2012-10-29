@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, json
+import os, json, time
 from configparser import SafeConfigParser
-from datetime import datetime as DateTime
 from urllib.request import urlretrieve
 
 import feedparser
@@ -23,8 +22,15 @@ def ensure_dir(dirname):
 def add(args):
     with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
         feeds = json.load(feedsjson)
+        for feed in feeds:
+            if args.name in feed:
+                
     with open(DATA_FILENAME, mode='w', encoding='utf-8') as feedsjson:
-        entry = {'name': args.name, 'url': args.url}
+        print (vars(args))
+        entry = {}
+        for key,value in vars(args).items():
+            if value != None and key != "func":
+                entry[key] = value
         feeds.append(entry)
         json.dump(feeds, feedsjson)
 
