@@ -19,24 +19,49 @@ def ensure_dir(dirname):
         if not os.path.isdir(dirname):
             raise
 
-def add(args):
+def add(args): # Adds a new feed
     with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
         feeds = json.load(feedsjson)
-        for feed in feeds:
-            if args.name in feed:
-                
+        if args.name in feeds:
+            print ("You already have a feed with that name.")
+            return 0
     with open(DATA_FILENAME, mode='w', encoding='utf-8') as feedsjson:
-        print (vars(args))
         entry = {}
         for key,value in vars(args).items():
-            if value != None and key != "func":
+            if value != None and key != "func" and key != "name":
                 entry[key] = value
-        feeds.append(entry)
+        feeds[args.name] = entry
         json.dump(feeds, feedsjson)
 
-def edit(args):
+def edit(args): # Edits the information associated with a certain feed
     with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
         feeds = json.load(feedsjson)
+        if not(args.name in feeds):
+            print ("You don't have a feed with that name.")
+            return 0
+    with open(DATA_FILENAME, mode='w', encoding='utf-8') as feedsjson:
+        for key,value in vars(args).items():
+            if value != None and key != "func" and key != "name":
+                feeds[args.name][key] = value
+        json.dump(feeds, feedsjson)
+
+def info(args):
+    for feed in args.names:
+        pretty_print(feed)
+
+def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
+    print ()
+    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
+        feeds = json.load(feedsjson)
+        print (feed)
+        print ("-"*len(feed))
+        print ("    url: " + feeds[feed]["url"])
+        if "downloadfrom" in feeds[feed]:
+            if feeds[feed]["downloadfrom"] != None:
+                print ("    In the next sync, greg will download podcasts issued later than", feeds[feed]["downloadfrom"], ".")
+        if "download" in feeds[feed]:
+            if feeds[feed]["download"] != None:
+                print ("    In the next sync, greg will download the latest", feeds[feed]["download"], "podcasts.")
 
 def sync():
     # 

@@ -19,22 +19,27 @@ parser_add = subparsers.add_parser('add', help='adds a new feed')
 parser_add.add_argument('name', help='the name of the new feed')
 parser_add.add_argument('url', help='the url of the new feed')
 dateornumber = parser_add.add_mutually_exclusive_group()
-dateornumber.add_argument('--date', type=from_date, help='the date from which files should be downloaded [%Y-%m-%d]')
-dateornumber.add_argument('--number', help='the number of files to be downloaded')
+dateornumber.add_argument('--downloadfrom', type=from_date, help='the date from which files should be downloaded [%Y-%m-%d]')
+dateornumber.add_argument('--download', help='the number of files to be downloaded')
 parser_add.set_defaults(func=greg.add)
 
 # create the parser for the "edit" command
 parser_edit = subparsers.add_parser('edit', help='edits a new feed')
-parser_edit.add_argument('name', help='the name of the new feed')
+parser_edit.add_argument('name', help='the name of the feed to be edited')
+parser_edit.add_argument('--url', help='the new url for the feed')
 dateornumber = parser_edit.add_mutually_exclusive_group()
-dateornumber.add_argument('--date', type=greg.from_date, help='the date from which files should be downloaded [%Y-%m-%d]')
-dateornumber.add_argument('--number', help='the number of files to be downloaded')
-parser_edit.set_defaults(func=greg.add)
+dateornumber.add_argument('--downloadfrom', type=from_date, help='the date from which files should be downloaded [%Y-%m-%d]')
+dateornumber.add_argument('--download', help='the number of files to be downloaded')
+parser_edit.set_defaults(func=greg.edit)
+
+# create the parser for the "info" command
+parser_info = subparsers.add_parser('info', help='provides information about a feed')
+parser_info.add_argument('names', help='the name(s) of the feed(s) you want to know about', nargs='+')
+parser_info.set_defaults(func=greg.info)
+
 
 
 
 # parse the args and call whatever function was selected
-print(sys.argv)
 args = parser.parse_args(sys.argv[1:])
-print (args)
 args.func(args)
