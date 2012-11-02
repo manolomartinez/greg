@@ -45,8 +45,12 @@ def edit(args): # Edits the information associated with a certain feed
                 feeds[args.name][key] = value
         json.dump(feeds, feedsjson)
 
-def info(args):
-    for feed in args.names:
+def info(args): # Provides information of a number of feeds
+    if "all" in args.names:
+        feeds = list_feeds()
+    else:
+        feeds = args.names
+    for feed in feeds:
         pretty_print(feed)
 
 def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
@@ -63,44 +67,51 @@ def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
             if feeds[feed]["download"] != None:
                 print ("    In the next sync, greg will download the latest", feeds[feed]["download"], "podcasts.")
 
-def sync():
-    # 
-    # Opening the config file.
-    # 
-    config = SafeConfigParser()
-    with open(CONFIG_FILENAME) as configfile:
-        config.readfp(configfile)
-    # 
-    # We go through each section (i.e., feed) in the config file.
-    # 
-    for section in config.sections():
-        # 
-        # Fetch feed.
-        # 
-        podcast = feedparser.parse(config.get(section, 'url'))
-        print ("Checking ",podcast.feed.title,"...")
-        # 
-        # The directory to save files is named after the podcast.
-        # 
-        directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
-        ensure_dir(directory)
-        # 
-        # Download entries later than fromdate in the config file.
-# 
-        latest = DateTime.strptime(
-            config.get(section, 'fromdate'), '%Y-%m-%d %H:%M:%S'
-        )
-        for entry in podcast.entries:
-            if DateTime(*entry.updated_parsed[:6]) > latest:
-                print ("Downloading ", entry.title)
-                podname = entry.link.split('/')[-1].split('#')[0].split('?')[0]
-                urlretrieve(entry.link, os.path.join(directory, podname))
-        # 
-        # New fromdate: the date of the latest feed update.
-        # 
-        feedtime = DateTime(*podcast.updated_parsed[:6])
-        config.set(section, 'fromdate', str(feedtime))
-        with open(CONFIG_FILENAME, 'w') as configfile:
-            config.write(configfile)
-        print ("Done")
+def list_feeds(): # Outputs a list of all feed names
+    feedslist = []
+    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
+        feeds = json.load(feedsjson)
+        for key in feeds:
+            feedslist.append(key)
+    return feedslist
+
+
+def sync(args):
+    if "all" in args.names:
+        targetfeeds = list_feeds()
+    else:
+        targetfeeds = args.names
+    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
+        feeds = json.load(feedsjson)
+        for feed in targetfeeds:
+            podcast = feedparser.parse(feeds[feed]["url"])
+            print ("Checking ",podcast.feed.title,"...")
+            # 
+            # The directory to save files is named after the podcast.
+            # 
+            directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+            ensure_dir(directory)
+            # 
+            # Download entries later than downloadfrom in the json entry
+            #
+            if "downloadfrom" in feeds[feed]:
+                if feeds[feed]["downloadfrom"] != None:
+                    latest = feeds[feed]["downloadfrom"]
+                else:
+                    latest = datetime.min # If there is no latest downloadfrom date, download all
+            for entry in podcast.entries:
+                if list(entry.updated_parsed) > latest:
+                    print ("Downloading ", entry.title)
+                    podname = entry.link.split('/')[-1].split('#')[0].split('?')[0]
+                    urlretrieve(entry.link, os.path.join(directory, podname))
+            # 
+            # New fromdate: the date of the latest feed update.
+            # 
+            feedtime = podcast.updated_parsed
+            print(feeds[feed]["downloadfrom"])
+            print(feedtime)
+            feeds[feed]["downloadfrom"]=feedtime
+            print ("Done")
+    with open(DATA_FILENAME, mode='w', encoding='utf-8') as feedsjson:
+        json.dump(feeds, feedsjson)
 

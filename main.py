@@ -8,6 +8,7 @@ import greg
 # defining the from_date type
 def from_date(string):
     fd =  time.strptime(string, "%d/%m/%y")
+    print (fd)
     return fd
 
 # create the top-level parser
@@ -34,11 +35,17 @@ parser_edit.set_defaults(func=greg.edit)
 
 # create the parser for the "info" command
 parser_info = subparsers.add_parser('info', help='provides information about a feed')
-parser_info.add_argument('names', help='the name(s) of the feed(s) you want to know about', nargs='+')
+parser_info.add_argument('names', help='the name(s) of the feed(s) you want to know about', nargs='*', default='all')
 parser_info.set_defaults(func=greg.info)
 
+# create the parser for the "list" command
+parser_info = subparsers.add_parser('list', help='lists all feeds')
+parser_info.set_defaults(func=greg.list_feeds)
 
-
+# create the parser for the "sync" command
+parser_sync = subparsers.add_parser('sync', help='syncs feed(s)')
+parser_sync.add_argument('names', help='the name(s) of the feed(s) you want to sync', nargs='*', default='all')
+parser_sync.set_defaults(func=greg.sync)
 
 # parse the args and call whatever function was selected
 args = parser.parse_args(sys.argv[1:])
