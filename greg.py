@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os, json, time
-from configparser import SafeConfigParser
 from urllib.request import urlretrieve
 
 import feedparser
@@ -85,7 +84,7 @@ def sync(args):
         feeds = json.load(feedsjson)
         for feed in targetfeeds:
             podcast = feedparser.parse(feeds[feed]["url"])
-            print ("Checking ",podcast.feed.title,"...")
+            print ("Checking",podcast.feed.title,"...")
             # 
             # The directory to save files is named after the podcast.
             # 
@@ -101,15 +100,13 @@ def sync(args):
                     latest = datetime.min # If there is no latest downloadfrom date, download all
             for entry in podcast.entries:
                 if list(entry.updated_parsed) > latest:
-                    print ("Downloading ", entry.title)
-                    podname = entry.link.split('/')[-1].split('#')[0].split('?')[0]
-                    urlretrieve(entry.link, os.path.join(directory, podname))
+                    print ("Downloading", entry.title)
+                    podname = entry.enclosure.split('/')[-1].split('#')[0].split('?')[0]
+                    urlretrieve(entry.enclosure, os.path.join(directory, podname))
             # 
             # New fromdate: the date of the latest feed update.
             # 
             feedtime = podcast.updated_parsed
-            print(feeds[feed]["downloadfrom"])
-            print(feedtime)
             feeds[feed]["downloadfrom"]=feedtime
             print ("Done")
     with open(DATA_FILENAME, mode='w', encoding='utf-8') as feedsjson:
