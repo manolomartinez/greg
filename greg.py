@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, configparser, json, pickle, time
+import os, configparser, pickle, time
 import urllib.request
 from urllib.request import urlretrieve
 from urllib.parse import urlparse 
