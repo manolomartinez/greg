@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, json, pickle, time
+import os, configparser, json, pickle, time
+import urllib.request
 from urllib.request import urlretrieve
 from urllib.parse import urlparse 
 
 import feedparser
 
-CONFIG_FILENAME = os.path.expanduser('~/.config/greg')
+CONFIG_FILENAME = os.path.expanduser('~/.config/greg/greg.conf')
 DOWNLOAD_PATH = os.path.expanduser('~/Podcasts')
 DATA_FILENAME = os.path.expanduser('~/.local/share/greg/data')
 DATA_DIRECTORY = os.path.expanduser('~/.local/share/greg')
+
+# The following are some auxiliary functions
 
 def ensure_dir(dirname):
     """Most of this code is from http://stackoverflow.com/questions/273192/"""
@@ -33,31 +36,52 @@ def parse_for_download(args):
             list_of_feeds = list_of_feeds + [str(x) for x in range (eval(extremes[0]),eval(extremes[1])+1)]
     return list_of_feeds
 
+def create_data_file():
+    with open(DATA_FILENAME, 'w') as datafile:
+        datafile.write("{}")
+
+# The following are the functions that correspond to the different commands
+
 def add(args): # Adds a new feed
-    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
-        feeds = json.load(feedsjson)
-        if args.name in feeds:
-            print ("You already have a feed with that name.")
-            return 0
-    with open(DATA_FILENAME, mode='w', encoding='utf-8') as feedsjson:
-        entry = {}
-        for key,value in vars(args).items():
-            if value != None and key != "func" and key != "name":
-                entry[key] = value
-        feeds[args.name] = entry
-        json.dump(feeds, feedsjson)
+    config = configparser.ConfigParser()
+    config.read(DATA_FILENAME)
+    if args.name in config.sections():
+        print ("You already have a feed with that name.")
+        return 1
+    entry = {}
+    for key,value in vars(args).items():
+        if value != None and key != "func" and key != "name":
+            entry[key] = value
+    config[args.name] = entry
+    with open(DATA_FILENAME, 'w') as configfile:
+        config.write(configfile)
 
 def edit(args): # Edits the information associated with a certain feed
-    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
-        feeds = json.load(feedsjson)
-        if not(args.name in feeds):
-            print ("You don't have a feed with that name.")
-            return 0
-    with open(DATA_FILENAME, mode='w', encoding='utf-8') as feedsjson:
-        for key,value in vars(args).items():
-            if value != None and key != "func" and key != "name":
-                feeds[args.name][key] = value
-        json.dump(feeds, feedsjson)
+    feeds = configparser.ConfigParser()
+    feeds.read(DATA_FILENAME)
+    if not(args.name in feeds):
+        print ("You don't have a feed with that name.")
+        return 1
+    for key,value in vars(args).items():
+        if value != None and key != "func" and key != "name":
+            feeds[args.name][key] = str(value)
+    with open(DATA_FILENAME, 'w') as configfile:
+        feeds.write(configfile)
+
+def remove(args): # Removes a certain feed
+    feeds = configparser.ConfigParser()
+    feeds.read(DATA_FILENAME)
+    if not(args.name in feeds):
+        print ("You don't have a feed with that name.")
+        return 1
+    inputtext = "Are you sure you want to remove the {0} feed? (y/N) ".format(args.name)
+    reply = input(inputtext)
+    if reply != "y" and reply != "Y": 
+        return 0
+    else:
+        feeds.remove_section(args.name)
+        with open(DATA_FILENAME, 'w') as configfile:
+            feeds.write(configfile)
 
 def info(args): # Provides information of a number of feeds
     if "all" in args.names:
@@ -69,17 +93,15 @@ def info(args): # Provides information of a number of feeds
 
 def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
     print ()
-    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
-        feeds = json.load(feedsjson)
-        print (feed)
-        print ("-"*len(feed))
-        print ("    url: " + feeds[feed]["url"])
-        if "downloadfrom" in feeds[feed]:
-            if feeds[feed]["downloadfrom"] != None:
-                print ("    Next sync will download from:", time.strftime("%d %b %Y %H:%M:%S", tuple(feeds[feed]["downloadfrom"]))+".")
-        if "download" in feeds[feed]:
-            if feeds[feed]["download"] != None:
-                print ("    Next sync will download:", feeds[feed]["download"], "podcasts.")
+    feeds = configparser.ConfigParser()
+    feeds.read(DATA_FILENAME)
+    print (feed)
+    print ("-"*len(feed))
+    print ("    url: " + feeds[feed]["url"])
+    if "downloadfrom" in feeds[feed]:
+        if feeds[feed]["downloadfrom"] != None:
+            feedtime = tuple(eval(feeds[feed]["downloadfrom"]))
+            print ("    Next sync will download from:", time.strftime("%d %b %Y %H:%M:%S", feedtime)+".")
 
 def list_for_user(args):
     for feed in list_feeds():
@@ -88,11 +110,9 @@ def list_for_user(args):
 
 def list_feeds(): # Outputs a list of all feed names
     feedslist = []
-    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
-        feeds = json.load(feedsjson)
-        for key in feeds:
-            feedslist.append(key)
-    return feedslist
+    feeds = configparser.ConfigParser()
+    feeds.read(DATA_FILENAME)
+    return feeds.sections()
 
 
 def sync(args):
@@ -100,53 +120,57 @@ def sync(args):
         targetfeeds = list_feeds()
     else:
         targetfeeds = args.names
-    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
-        feeds = json.load(feedsjson)
-        for feed in targetfeeds:
-            podcast = feedparser.parse(feeds[feed]["url"])
-            print ("Checking",podcast.feed.title,"...")
-            # 
-            # The directory to save files is named after the podcast.
-            # 
-            directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
-            ensure_dir(directory)
-            # 
-            # Download entries later than downloadfrom in the json entry
-            #
-            if "downloadfrom" in feeds[feed]:
-                if feeds[feed]["downloadfrom"] != None:
-                    latest = feeds[feed]["downloadfrom"]
-                else:
-                    latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
+    feeds = configparser.ConfigParser()
+    feeds.read(DATA_FILENAME)
+    for feed in targetfeeds:
+        podcast = feedparser.parse(feeds[feed]["url"])
+        print ("Checking",podcast.feed.title, end = "...\n")
+        # 
+        # The directory to save files is named after the podcast.
+        # 
+        directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+        ensure_dir(directory)
+        # 
+        # Download entries later than downloadfrom in the json entry
+        #
+        if "downloadfrom" in feeds[feed]:
+            if feeds[feed]["downloadfrom"] != None:
+                latest = eval(feeds[feed]["downloadfrom"])
             else:
                 latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
-            entrytimes = [latest] # Here we will put the times of each entry, to choose the max for "latest"
-            for entry in podcast.entries:
-                if list(entry.updated_parsed) > latest:
-                    entrytimes.append(list(entry.updated_parsed))
-                    print ("Downloading", entry.title)
-                    for enclosure in entry.enclosures:
-                        if "audio" in enclosure["type"]: # if it's an audio file
-                            podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
+        else:
+            latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
+        entrytimes = [latest] # Here we will put the times of each entry, to choose the max for "latest"
+        for entry in podcast.entries:
+            if list(entry.updated_parsed) > latest:
+                entrytimes.append(list(entry.updated_parsed))
+                print ("Downloading", entry.title)
+                for enclosure in entry.enclosures:
+                    if "audio" in enclosure["type"]: # if it's an audio file
+                        podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
+                        try:
                             urlretrieve(enclosure["href"], os.path.join(directory, podname))
-            # 
-            # New fromdate: the date of the latest feed update.
-            # 
-            feeds[feed]["downloadfrom"]=max(entrytimes)
-            print ("Done")
-    with open(DATA_FILENAME, mode='w', encoding='utf-8') as feedsjson:
-        json.dump(feeds, feedsjson)
+                        except urllib.error.URLError:
+                            print ("... something went wrong. Are you sure you are connected to the internet?")
+                            return 1
+        # 
+        # New fromdate: the date of the latest feed update.
+        # 
+        feeds[feed]["downloadfrom"]=str(max(entrytimes))
+        print ("Done")
+    with open(DATA_FILENAME, 'w') as configfile:
+        feeds.write(configfile)
 
 def check(args):
-    with open(DATA_FILENAME, mode='r', encoding='utf-8') as feedsjson:
-        feeds = json.load(feedsjson)
-        podcast = feedparser.parse(feeds[args.name]["url"])
-        for entry in enumerate(podcast.entries):
-            listentry=list(entry)
-            print (listentry[0], end =": ")
-            print (listentry[1]["title"], end = " (")
-            print (listentry[1]["updated"], end =")")
-            print ()
+    feeds = configparser.ConfigParser()
+    feeds.read(DATA_FILENAME)
+    podcast = feedparser.parse(feeds[args.name]["url"])
+    for entry in enumerate(podcast.entries):
+        listentry=list(entry)
+        print (listentry[0], end =": ")
+        print (listentry[1]["title"], end = " (")
+        print (listentry[1]["updated"], end =")")
+        print ()
     dumpfilename = os.path.join(DATA_DIRECTORY, 'feeddump')
     with open(dumpfilename, mode='wb') as dumpfile:
         pickle.dump(podcast, dumpfile)
@@ -156,10 +180,14 @@ def download(args):
     dumpfilename = os.path.join(DATA_DIRECTORY, 'feeddump')
     if not(os.path.isfile(dumpfilename)):
         print("You need to run ""greg check <feed>"" before using ""greg download"".")
-        return 0
+        return 1
     with open(dumpfilename, mode='rb') as dumpfile:
         podcast = pickle.load(dumpfile)
-        directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+        try:
+            directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+        except Exception:
+            print("... something went wrong. Are you sure your last check went well?")
+            return 1
         ensure_dir(directory)
         for number in issues:
             entry = podcast.entries[eval(number)]
@@ -167,8 +195,12 @@ def download(args):
             for enclosure in entry.enclosures:
                 if "audio" in enclosure["type"]: # if it's an audio file
                     podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
-                    urlretrieve(enclosure["href"], os.path.join(directory, podname))
-    print("Done")
+                    try:
+                        urlretrieve(enclosure["href"], os.path.join(directory, podname))
+                        print("Done")
+                    except urllib.error.URLError:
+                        print ("... something went wrong. Are you sure you are connected to the internet?")
+                        return 1
 
 
 

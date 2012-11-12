@@ -2,14 +2,26 @@
 # -*- coding: utf-8 -*-
 
 import argparse, time, sys
+from urllib.parse import urlparse
 
 import greg
 
 # defining the from_date type
 def from_date(string):
-    fd =  time.strptime(string, "%d/%m/%y")
-    print (fd)
+    try:
+        fd =  list(time.strptime(string, "%d/%m/%y"))
+    except Exception:
+        msg = "the date should be in the form dd/mm/yy"
+        raise argparse.ArgumentTypeError(msg)
     return fd
+
+# defining the url type
+def url(string):
+    testurl = urlparse(string)
+    if not testurl.netloc:
+        msg = "%r does not appear to be an url (be sure to use the full url, including the ""http(s)"" bit)" % string
+        raise argparse.ArgumentTypeError(msg)
+    return string
 
 # create the top-level parser
 parser = argparse.ArgumentParser()
@@ -18,15 +30,15 @@ subparsers = parser.add_subparsers()
 # create the parser for the "add" command
 parser_add = subparsers.add_parser('add', help='adds a new feed')
 parser_add.add_argument('name', help='the name of the new feed')
-parser_add.add_argument('url', help='the url of the new feed')
-parser_add.add_argument('--downloadfrom', type=from_date, help='the date from which files should be downloaded [%Y-%m-%d]')
+parser_add.add_argument('url', type = url, help='the url of the new feed')
+parser_add.add_argument('--downloadfrom', '-d', type=from_date, help='the date from which files should be downloaded (dd/mm/yy)')
 parser_add.set_defaults(func=greg.add)
 
 # create the parser for the "edit" command
 parser_edit = subparsers.add_parser('edit', help='edits a new feed')
 parser_edit.add_argument('name', help='the name of the feed to be edited')
-parser_edit.add_argument('--url', help='the new url for the feed')
-parser_edit.add_argument('--downloadfrom', type=from_date, help='the date from which files should be downloaded [%Y-%m-%d]')
+parser_edit.add_argument('--url', '-u', type = url, help='the new url for the feed')
+parser_edit.add_argument('--downloadfrom', '-d', type=from_date, help='the date from which files should be downloaded [%Y-%m-%d]')
 parser_edit.set_defaults(func=greg.edit)
 
 # create the parser for the "info" command
@@ -53,21 +65,14 @@ parser_download = subparsers.add_parser('download', help='downloads particular i
 parser_download.add_argument('number', help='the issue numbers you want to download', nargs="*")
 parser_download.set_defaults(func=greg.download)
 
-# create the parser for the "tag" command
-#parser_tag = subparsers.add_parser('tag', help='tags feed(s)')
-#parser_tag.add_argument('name', help='the name of the feed you want to tag')
-#parser_tag.set_defaults(func=greg.tag)
-
-# create the parser for the "untag" command
-#parser_untag = subparsers.add_parser('untag', help='untags feed(s)')
-#parser_untag.add_argument('name', help='the name of the feed you want to untag')
-#parser_untag.set_defaults(func=greg.untag)
-
-# create the parser for the "pfd" command
-parser_pfd = subparsers.add_parser('pfd', help='pfds feed(s)')
-parser_pfd.add_argument('number', help='the name of the feed you want to pfd', nargs="*")
-parser_pfd.set_defaults(func=greg.parse_for_download)
+# create the parser for the "remove" command
+parser_remove = subparsers.add_parser('remove', help='removes feed(s)')
+parser_remove.add_argument('name', help='the name of the feed you want to remove')
+parser_remove.set_defaults(func=greg.remove)
 
 # parse the args and call whatever function was selected
 args = parser.parse_args(sys.argv[1:])
+#try:
 args.func(args)
+#except Exception:
+#    parser.print_usage()    
