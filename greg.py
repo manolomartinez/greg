@@ -1,28 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os, configparser, pickle, time
-import urllib.request
 from urllib.request import urlretrieve
 from urllib.parse import urlparse 
 
 import feedparser
 
-CONFIG_FILENAME = os.path.expanduser('~/.config/greg/greg.conf')
-DOWNLOAD_PATH = os.path.expanduser('~/Podcasts')
-DATA_FILENAME = os.path.expanduser('~/.local/share/greg/data')
-DATA_DIRECTORY = os.path.expanduser('~/.local/share/greg')
+try: # Stagger is an optional dependency
+    import stagger
+    from stagger.id3 import *
+    staggerexists = True
+except ImportError:
+    staggerexists = False
+
+CONFIG_FILENAME_GLOBAL = '/etc/greg.conf'
+CONFIG_FILENAME_USER = os.path.expanduser('~/.config/greg/greg.conf')
 
 # The following are some auxiliary functions
 
 def ensure_dir(dirname):
-    """Most of this code is from http://stackoverflow.com/questions/273192/"""
     try:
         os.makedirs(dirname)
     except OSError:
         if not os.path.isdir(dirname):
             raise
 
-def parse_for_download(args):
+def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a list such as [4,6,7,8,10]
     single_arg="" # in the first bit we put all arguments together and take out any
     list_of_feeds=[]
     for arg in args.number:
@@ -36,13 +39,48 @@ def parse_for_download(args):
             list_of_feeds = list_of_feeds + [str(x) for x in range (eval(extremes[0]),eval(extremes[1])+1)]
     return list_of_feeds
 
-def create_data_file():
-    with open(DATA_FILENAME, 'w') as datafile:
-        datafile.write("{}")
+def retrieve_data_directory(): # Retrieves the data directory (looks first into CONFIG_FILENAME_GLOBAL
+    # then into CONFIG_FILENAME_USER. The latest takes preeminence)
+    config = configparser.ConfigParser()
+    config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
+    section = config.default_section
+    data_path = config.get(section, 'Data directory', fallback='~/.local/share/greg')
+    return os.path.expanduser(data_path)   
+        
+def retrieve_download_path(feed): # Retrieves the data directory (looks first into CONFIG_FILENAME_GLOBAL
+    # then into the [DEFAULT], then the [feed], section of CONFIG_FILENAME_USER. The latest takes preeminence)
+    config = configparser.ConfigParser()
+    config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
+    section = feed if config.has_section(feed) else config.default_section
+    download_path = config.get(section, 'Download directory', fallback='~/Podcasts')
+    subdirectory = config.get(section, 'Create subdirectories', fallback='no')
+    return [os.path.expanduser(download_path), subdirectory]   
+
+def will_tag(feed): # Checks whether the feed should be tagged (looks first into CONFIG_FILENAME_GLOBAL
+    # then into the [DEFAULT], then the [feed], section of CONFIG_FILENAME_USER. The latest takes preeminence)
+    config = configparser.ConfigParser()
+    config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
+    section = feed if config.has_section(feed) else config.default_section
+    wanttags = config.get(section, 'Tag', fallback='no')
+    if wanttags == 'yes':
+        if staggerexists:
+            willtag = True
+        else:
+            willtag = False
+            sys.stderr.write("You want me to tag this feed, but you have not installed the Stagger module. I cannot honour your request")
+    else:
+        willtag = False
+    return willtag
+
+def tag(entry, podcast, podpath): # Tags the file at podpath with the information in podcast and entry
+    stagger.util.set_frames(podpath, {"artist":podcast.feed.title})
+    stagger.util.set_frames(podpath, {"title":entry.title})
+    stagger.util.set_frames(podpath, {"genre":"Podcast"})
 
 # The following are the functions that correspond to the different commands
 
 def add(args): # Adds a new feed
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     config = configparser.ConfigParser()
     config.read(DATA_FILENAME)
     if args.name in config.sections():
@@ -57,6 +95,7 @@ def add(args): # Adds a new feed
         config.write(configfile)
 
 def edit(args): # Edits the information associated with a certain feed
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     if not(args.name in feeds):
@@ -69,6 +108,7 @@ def edit(args): # Edits the information associated with a certain feed
         feeds.write(configfile)
 
 def remove(args): # Removes a certain feed
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     if not(args.name in feeds):
@@ -93,6 +133,7 @@ def info(args): # Provides information of a number of feeds
 
 def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
     print ()
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     print (feed)
@@ -110,6 +151,7 @@ def list_for_user(args):
 
 def list_feeds(): # Outputs a list of all feed names
     feedslist = []
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     return feeds.sections()
@@ -120,15 +162,24 @@ def sync(args):
         targetfeeds = list_feeds()
     else:
         targetfeeds = args.names
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     for feed in targetfeeds:
+        willtag = will_tag(feed)
         podcast = feedparser.parse(feeds[feed]["url"])
         print ("Checking",podcast.feed.title, end = "...\n")
         # 
         # The directory to save files is named after the podcast.
         # 
-        directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+        DOWNLOAD_PATH = retrieve_download_path(feed)[0]
+        subdirectory = retrieve_download_path(feed)[1]
+        if subdirectory == "title":
+            directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+        elif subdirectory == "name":
+            directory = os.path.join(DOWNLOAD_PATH, feed)
+        else:
+            directory = DOWNLOAD_PATH
         ensure_dir(directory)
         # 
         # Download entries later than downloadfrom in the json entry
@@ -148,13 +199,16 @@ def sync(args):
                 for enclosure in entry.enclosures:
                     if "audio" in enclosure["type"]: # if it's an audio file
                         podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
+                        podpath = os.path.join(directory, podname)
                         try:
-                            urlretrieve(enclosure["href"], os.path.join(directory, podname))
+                            urlretrieve(enclosure["href"], podpath)
+                            if willtag:
+                                tag(entry, podcast, podpath)
                         except urllib.error.URLError:
                             print ("... something went wrong. Are you sure you are connected to the internet?")
                             return 1
         # 
-        # New fromdate: the date of the latest feed update.
+        # New downloadfrom: the date of the latest feed update.
         # 
         feeds[feed]["downloadfrom"]=str(max(entrytimes))
         print ("Done")
@@ -162,6 +216,7 @@ def sync(args):
         feeds.write(configfile)
 
 def check(args):
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     podcast = feedparser.parse(feeds[args.name]["url"])
@@ -171,12 +226,14 @@ def check(args):
         print (listentry[1]["title"], end = " (")
         print (listentry[1]["updated"], end =")")
         print ()
+    DATA_DIRECTORY = retrieve_data_directory()
     dumpfilename = os.path.join(DATA_DIRECTORY, 'feeddump')
     with open(dumpfilename, mode='wb') as dumpfile:
         pickle.dump(podcast, dumpfile)
 
 def download(args):
     issues = parse_for_download(args)
+    DATA_DIRECTORY = retrieve_data_directory()
     dumpfilename = os.path.join(DATA_DIRECTORY, 'feeddump')
     if not(os.path.isfile(dumpfilename)):
         print("You need to run ""greg check <feed>"" before using ""greg download"".")
@@ -184,7 +241,7 @@ def download(args):
     with open(dumpfilename, mode='rb') as dumpfile:
         podcast = pickle.load(dumpfile)
         try:
-            directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+            directory = retrieve_download_path("DEFAULT")
         except Exception:
             print("... something went wrong. Are you sure your last check went well?")
             return 1
