@@ -22,7 +22,6 @@ _feedburner_date_pattern = re.compile(
     r'\w+, (\w+) (\d{,2}), (\d{4}) - (\d{,2}):(\d{2})')
  
 def FeedburnerDateHandler(aDateString):
-    print(aDateString)
     months = {"January":1, "February":2, "March":3, "April":4, "May":5, "June":6, "July":7, "August":8, "September":9, "October":10, "November":11, "December":12}
     # Parse a date sucn as "Sunday, November 25, 2012 - 12:00"
     try: # feedparser is supposed to catch the exception on its own, but it doesn't
