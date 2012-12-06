@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, configparser, pickle, time
+import os, sys, configparser, pickle, time, re
 from urllib.request import urlretrieve
 from urllib.parse import urlparse 
 
@@ -15,6 +15,23 @@ except ImportError:
 
 CONFIG_FILENAME_GLOBAL = '/etc/greg.conf'
 CONFIG_FILENAME_USER = os.path.expanduser('~/.config/greg/greg.conf')
+
+# Registering a custom date handler for feedparser
+
+_feedburner_date_pattern = re.compile(
+    r'\w+, (\w+) (\d{,2}), (\d{4}) - (\d{,2}):(\d{2})')
+ 
+def FeedburnerDateHandler(aDateString):
+    print(aDateString)
+    months = {"January":1, "February":2, "March":3, "April":4, "May":5, "June":6, "July":7, "August":8, "September":9, "October":10, "November":11, "December":12}
+    # Parse a date sucn as "Sunday, November 25, 2012 - 12:00"
+    try: # feedparser is supposed to catch the exception on its own, but it doesn't
+        month, day, year, hour, minute = _feedburner_date_pattern.search(aDateString).groups()
+        return (int(year), int(months[month]), int(day), int(hour), int(minute), 0, 0, 0, 0)
+    except AttributeError:
+        return None
+
+feedparser.registerDateHandler(FeedburnerDateHandler)
 
 # The following are some auxiliary functions
 
@@ -167,51 +184,62 @@ def sync(args):
     feeds.read(DATA_FILENAME)
     for feed in targetfeeds:
         willtag = will_tag(feed)
-        podcast = feedparser.parse(feeds[feed]["url"])
-        print ("Checking",podcast.feed.title, end = "...\n")
-        # 
-        # The directory to save files is named after the podcast.
-        # 
-        DOWNLOAD_PATH = retrieve_download_path(feed)[0]
-        subdirectory = retrieve_download_path(feed)[1]
-        if subdirectory == "title":
-            directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
-        elif subdirectory == "name":
-            directory = os.path.join(DOWNLOAD_PATH, feed)
-        else:
-            directory = DOWNLOAD_PATH
-        ensure_dir(directory)
-        # 
-        # Download entries later than downloadfrom in the json entry
-        #
-        if "downloadfrom" in feeds[feed]:
-            if feeds[feed]["downloadfrom"] != None:
-                latest = eval(feeds[feed]["downloadfrom"])
+        try:
+            wentwrong = "urlopen" in str(feedparser.parse(feeds[feed]["url"])["bozo_exception"])
+        except KeyError:
+            wentwrong = False
+        if not(wentwrong):
+            podcast = feedparser.parse(feeds[feed]["url"])
+            print ("Checking",podcast.feed.title, end = "...\n")
+            # 
+            # The directory to save files is named after the podcast.
+            # 
+            DOWNLOAD_PATH = retrieve_download_path(feed)[0]
+            subdirectory = retrieve_download_path(feed)[1]
+            if subdirectory == "title":
+                directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+            elif subdirectory == "name":
+                directory = os.path.join(DOWNLOAD_PATH, feed)
+            else:
+                directory = DOWNLOAD_PATH
+            ensure_dir(directory)
+            # 
+            # Download entries later than downloadfrom in the json entry
+            #
+            if "downloadfrom" in feeds[feed]:
+                if feeds[feed]["downloadfrom"] != None:
+                    latest = eval(feeds[feed]["downloadfrom"])
+                else:
+                    latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
             else:
                 latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
+            entrytimes = [latest] # Here we will put the times of each entry, to choose the max for "latest"
+            for entry in podcast.entries:
+                try: 
+                    entrydate = list(entry.updated_parsed)
+                except TypeError:
+                    entrydate = list(entry.published_parsed)
+                if entrydate > latest:
+                    entrytimes.append(entrydate)
+                    print ("Downloading", entry.title)
+                    for enclosure in entry.enclosures:
+                        if "audio" in enclosure["type"]: # if it's an audio file
+                            podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
+                            podpath = os.path.join(directory, podname)
+                            try:
+                                urlretrieve(enclosure["href"], podpath)
+                                if willtag:
+                                    tag(entry, podcast, podpath)
+                            except URLError:
+                                sys.exit ("... something went wrong. Are you sure you are connected to the internet?")
+            # 
+            # New downloadfrom: the date of the latest feed update.
+            # 
+            feeds[feed]["downloadfrom"]=str(max(entrytimes))
+            print ("Done")
         else:
-            latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
-        entrytimes = [latest] # Here we will put the times of each entry, to choose the max for "latest"
-        for entry in podcast.entries:
-            if list(entry.updated_parsed) > latest:
-                entrytimes.append(list(entry.updated_parsed))
-                print ("Downloading", entry.title)
-                for enclosure in entry.enclosures:
-                    if "audio" in enclosure["type"]: # if it's an audio file
-                        podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
-                        podpath = os.path.join(directory, podname)
-                        try:
-                            urlretrieve(enclosure["href"], podpath)
-                            if willtag:
-                                tag(entry, podcast, podpath)
-                        except urllib.error.URLError:
-                            print ("... something went wrong. Are you sure you are connected to the internet?")
-                            return 1
-        # 
-        # New downloadfrom: the date of the latest feed update.
-        # 
-        feeds[feed]["downloadfrom"]=str(max(entrytimes))
-        print ("Done")
+            msg = "I cannot sync " + feed + " just now. Are you connected to the internet?"
+            print(msg)
     with open(DATA_FILENAME, 'w') as configfile:
         feeds.write(configfile)
 
@@ -219,7 +247,14 @@ def check(args):
     DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
-    podcast = feedparser.parse(feeds[args.name]["url"])
+    try:
+        wentwrong = "urlopen" in str(feedparser.parse(feeds[args.name]["url"])["bozo_exception"])
+    except KeyError:
+        wentwrong = False
+    if not(wentwrong):
+        podcast = feedparser.parse(feeds[args.name]["url"])
+    else:
+        sys.exit("I cannot check that podcast now. You are probably not connected to the internet.")
     for entry in enumerate(podcast.entries):
         listentry=list(entry)
         print (listentry[0], end =": ")
