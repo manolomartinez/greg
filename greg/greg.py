@@ -1,8 +1,24 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Copyright (C) 2012  Manolo Martínez <manolo@austrohungaro.com>
+#
+# This file is part or Greg.
+#
+# Greg is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Greg is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Greg.  If not, see <http://www.gnu.org/licenses/>.
+
 import os, sys, configparser, pickle, time, re
 from urllib.request import urlretrieve
 from urllib.parse import urlparse 
+from urllib.error import URLError
 
 import feedparser
 
@@ -45,7 +61,7 @@ def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a lis
     single_arg="" # in the first bit we put all arguments together and take out any
     list_of_feeds=[]
     for arg in args.number:
-        single_arg = single_arg + " " + arg
+        single_arg = ''.join([single_arg , " " , arg])
     single_arg = single_arg.translate({32:None}) # eliminates spaces
     for group in single_arg.split(sep=","):
         if not("-" in group):
@@ -154,11 +170,11 @@ def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
     feeds.read(DATA_FILENAME)
     print (feed)
     print ("-"*len(feed))
-    print ("    url: " + feeds[feed]["url"])
+    print (''.join(["    url: " , feeds[feed]["url"]]))
     if "downloadfrom" in feeds[feed]:
         if feeds[feed]["downloadfrom"] != None:
             feedtime = tuple(eval(feeds[feed]["downloadfrom"]))
-            print ("    Next sync will download from:", time.strftime("%d %b %Y %H:%M:%S", feedtime)+".")
+            print (''.join(["    Next sync will download from:", time.strftime("%d %b %Y %H:%M:%S", feedtime),"."]))
 
 def list_for_user(args):
     for feed in list_feeds():
@@ -187,7 +203,7 @@ def sync(args):
             wentwrong = "urlopen" in str(feedparser.parse(feeds[feed]["url"])["bozo_exception"])
         except KeyError:
             wentwrong = False
-        if not(wentwrong):
+        if not wentwrong:
             podcast = feedparser.parse(feeds[feed]["url"])
             print ("Checking",podcast.feed.title, end = "...\n")
             # 
@@ -203,7 +219,7 @@ def sync(args):
                 directory = DOWNLOAD_PATH
             ensure_dir(directory)
             # 
-            # Download entries later than downloadfrom in the json entry
+            # Download entries later than downloadfrom in the feed
             #
             if "downloadfrom" in feeds[feed]:
                 if feeds[feed]["downloadfrom"] != None:
@@ -217,11 +233,16 @@ def sync(args):
                 try: 
                     entrydate = list(entry.updated_parsed)
                 except TypeError:
-                    entrydate = list(entry.published_parsed)
+                    try:
+                        entrydate = list(entry.published_parsed)
+                    except TypeError:
+                        print("I'm sorry. I cannot parse the time information of this feed. If you possibly can, please report an issue at github.com/manolomartinez/greg.")
+                        break
                 if entrydate > latest:
                     entrytimes.append(entrydate)
+                    feeds[feed]["downloadfrom"]=str(max(entrytimes))
                     print ("Downloading", entry.title)
-                    for enclosure in entry.enclosures:
+                    for enclosure in entry.enclosures: # We will download all audio enclosures
                         if "audio" in enclosure["type"]: # if it's an audio file
                             podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
                             podpath = os.path.join(directory, podname)
@@ -231,16 +252,15 @@ def sync(args):
                                     tag(entry, podcast, podpath)
                             except URLError:
                                 sys.exit ("... something went wrong. Are you sure you are connected to the internet?")
+                with open(DATA_FILENAME, 'w') as configfile: # We write to configfile this often to ensure that downloaded entries count as downloaded.
+                    feeds.write(configfile)
             # 
             # New downloadfrom: the date of the latest feed update.
             # 
-            feeds[feed]["downloadfrom"]=str(max(entrytimes))
             print ("Done")
         else:
-            msg = "I cannot sync " + feed + " just now. Are you connected to the internet?"
+            msg = ''.join(["I cannot sync " , feed , " just now. Are you connected to the internet?"])
             print(msg)
-    with open(DATA_FILENAME, 'w') as configfile:
-        feeds.write(configfile)
 
 def check(args):
     DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
@@ -289,7 +309,7 @@ def download(args):
                     try:
                         urlretrieve(enclosure["href"], os.path.join(directory, podname))
                         print("Done")
-                    except urllib.error.URLError:
+                    except URLError:
                         print ("... something went wrong. Are you sure you are connected to the internet?")
                         return 1
 
