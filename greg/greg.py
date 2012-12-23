@@ -58,7 +58,7 @@ def ensure_dir(dirname):
             raise
 
 def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a list such as [4,6,7,8,10]
-    single_arg="" # in the first bit we put all arguments together and take out any
+    single_arg="" # in the first bit we put all arguments together and take out any extra spaces
     list_of_feeds=[]
     for arg in args.number:
         single_arg = ''.join([single_arg , " " , arg])
@@ -295,7 +295,7 @@ def download(args):
     with open(dumpfilename, mode='rb') as dumpfile:
         podcast = pickle.load(dumpfile)
         try:
-            directory = retrieve_download_path("DEFAULT")
+            directory = retrieve_download_path("DEFAULT")[0]
         except Exception:
             print("... something went wrong. Are you sure your last check went well?")
             return 1
