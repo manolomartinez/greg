@@ -11,4 +11,5 @@ setup(  name='Greg',
         packages=['greg'],
         scripts=['bin/greg'],
         data_files=[('/etc',['data/greg.conf'])]
+        license = 'GPLv3'
         )
