@@ -77,7 +77,9 @@ def retrieve_data_directory(): # Retrieves the data directory (looks first into 
     config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
     section = config.default_section
     data_path = config.get(section, 'Data directory', fallback='~/.local/share/greg')
-    return os.path.expanduser(data_path)   
+    data_path_expanded = os.path.expanduser(data_path)
+    ensure_dir(data_path_expanded)
+    return os.path.expanduser(data_path_expanded)   
         
 def retrieve_download_path(feed): # Retrieves the data directory (looks first into CONFIG_FILENAME_GLOBAL
     # then into the [DEFAULT], then the [feed], section of CONFIG_FILENAME_USER. The latest takes preeminence)
@@ -174,7 +176,7 @@ def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
     if "downloadfrom" in feeds[feed]:
         if feeds[feed]["downloadfrom"] != None:
             feedtime = tuple(eval(feeds[feed]["downloadfrom"]))
-            print (''.join(["    Next sync will download from:", time.strftime("%d %b %Y %H:%M:%S", feedtime),"."]))
+            print (''.join(["    Next sync will download from: ", time.strftime("%d %b %Y %H:%M:%S", feedtime),"."]))
 
 def list_for_user(args):
     for feed in list_feeds():
