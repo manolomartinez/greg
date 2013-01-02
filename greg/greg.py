@@ -101,7 +101,7 @@ def will_tag(feed): # Checks whether the feed should be tagged (looks first into
             willtag = True
         else:
             willtag = False
-            sys.stderr.write("You want me to tag this feed, but you have not installed the Stagger module. I cannot honour your request")
+            print("You want me to tag {0}, but you have not installed the Stagger module. I cannot honour your request.".format(feed), file = sys.stderr, flush=True)
     else:
         willtag = False
     return willtag
@@ -118,8 +118,7 @@ def add(args): # Adds a new feed
     config = configparser.ConfigParser()
     config.read(DATA_FILENAME)
     if args.name in config.sections():
-        print ("You already have a feed with that name.")
-        return 1
+        sys.exit("You already have a feed with that name.")
     entry = {}
     for key,value in vars(args).items():
         if value != None and key != "func" and key != "name":
@@ -133,8 +132,7 @@ def edit(args): # Edits the information associated with a certain feed
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     if not(args.name in feeds):
-        print ("You don't have a feed with that name.")
-        return 1
+        sys.exit("You don't have a feed with that name.")
     for key,value in vars(args).items():
         if value != None and key != "func" and key != "name":
             feeds[args.name][key] = str(value)
@@ -146,8 +144,7 @@ def remove(args): # Removes a certain feed
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     if not(args.name in feeds):
-        print ("You don't have a feed with that name.")
-        return 1
+        sys.exit("You don't have a feed with that name.")
     inputtext = "Are you sure you want to remove the {0} feed? (y/N) ".format(args.name)
     reply = input(inputtext)
     if reply != "y" and reply != "Y": 
@@ -238,7 +235,7 @@ def sync(args):
                     try:
                         entrydate = list(entry.published_parsed)
                     except TypeError:
-                        print("I'm sorry. I cannot parse the time information of this feed. If you possibly can, please report an issue at github.com/manolomartinez/greg.")
+                        print("I'm sorry. I cannot parse the time information of this feed. If you possibly can, please report an issue at github.com/manolomartinez/greg.", file = sys.stderr, flush = True)
                         break
                 if entrydate > latest:
                     entrytimes.append(entrydate)
@@ -262,7 +259,7 @@ def sync(args):
             print ("Done")
         else:
             msg = ''.join(["I cannot sync " , feed , " just now. Are you connected to the internet?"])
-            print(msg)
+            print(msg, file = sys.stderr, flush = True)
 
 def check(args):
     DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
@@ -292,15 +289,13 @@ def download(args):
     DATA_DIRECTORY = retrieve_data_directory()
     dumpfilename = os.path.join(DATA_DIRECTORY, 'feeddump')
     if not(os.path.isfile(dumpfilename)):
-        print("You need to run ""greg check <feed>"" before using ""greg download"".")
-        return 1
+        sys.exit("You need to run ""greg check <feed>"" before using ""greg download"".")
     with open(dumpfilename, mode='rb') as dumpfile:
         podcast = pickle.load(dumpfile)
         try:
             directory = retrieve_download_path("DEFAULT")[0]
         except Exception:
-            print("... something went wrong. Are you sure your last check went well?")
-            return 1
+            sys.exit("... something went wrong. Are you sure your last check went well?")
         ensure_dir(directory)
         for number in issues:
             entry = podcast.entries[eval(number)]
@@ -312,8 +307,7 @@ def download(args):
                         urlretrieve(enclosure["href"], os.path.join(directory, podname))
                         print("Done")
                     except URLError:
-                        print ("... something went wrong. Are you sure you are connected to the internet?")
-                        return 1
+                        sys.exit("... something went wrong. Are you sure you are connected to the internet?")
 
 
 
