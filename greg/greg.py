@@ -189,77 +189,87 @@ def list_feeds(): # Outputs a list of all feed names
 
 
 def sync(args):
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
+    feeds = configparser.ConfigParser()
+    feeds.read(DATA_FILENAME)
     if "all" in args.names:
         targetfeeds = list_feeds()
     else:
         targetfeeds = args.names
-    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
-    feeds = configparser.ConfigParser()
-    feeds.read(DATA_FILENAME)
     for feed in targetfeeds:
-        willtag = will_tag(feed)
+        podcast = feedparser.parse(feeds[feed]["url"])
         try:
-            wentwrong = "urlopen" in str(feedparser.parse(feeds[feed]["url"])["bozo_exception"])
+            wentwrong = "URLError" in str(podcast["bozo_exception"])
         except KeyError:
             wentwrong = False
         if not wentwrong:
-            podcast = feedparser.parse(feeds[feed]["url"])
-            print ("Checking",podcast.feed.title, end = "...\n")
-            # 
-            # The directory to save files is named after the podcast.
-            # 
-            DOWNLOAD_PATH = retrieve_download_path(feed)[0]
-            subdirectory = retrieve_download_path(feed)[1]
-            if subdirectory == "title":
-                directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
-            elif subdirectory == "name":
-                directory = os.path.join(DOWNLOAD_PATH, feed)
-            else:
-                directory = DOWNLOAD_PATH
-            ensure_dir(directory)
-            # 
-            # Download entries later than downloadfrom in the feed
-            #
-            if "downloadfrom" in feeds[feed]:
-                if feeds[feed]["downloadfrom"] != None:
-                    latest = eval(feeds[feed]["downloadfrom"])
-                else:
-                    latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
-            else:
-                latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
-            entrytimes = [latest] # Here we will put the times of each entry, to choose the max for "latest"
-            for entry in podcast.entries:
-                try: 
-                    entrydate = list(entry.updated_parsed)
-                except TypeError:
-                    try:
-                        entrydate = list(entry.published_parsed)
-                    except TypeError:
-                        print("I'm sorry. I cannot parse the time information of this feed. If you possibly can, please report an issue at github.com/manolomartinez/greg.", file = sys.stderr, flush = True)
-                        break
-                if entrydate > latest:
-                    entrytimes.append(entrydate)
-                    feeds[feed]["downloadfrom"]=str(max(entrytimes))
-                    print ("Downloading", entry.title)
-                    for enclosure in entry.enclosures: # We will download all audio enclosures
-                        if "audio" in enclosure["type"]: # if it's an audio file
-                            podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
-                            podpath = os.path.join(directory, podname)
-                            try:
-                                urlretrieve(enclosure["href"], podpath)
-                                if willtag:
-                                    tag(entry, podcast, podpath)
-                            except URLError:
-                                sys.exit ("... something went wrong. Are you sure you are connected to the internet?")
-                with open(DATA_FILENAME, 'w') as configfile: # We write to configfile this often to ensure that downloaded entries count as downloaded.
-                    feeds.write(configfile)
-            # 
-            # New downloadfrom: the date of the latest feed update.
-            # 
-            print ("Done")
+            try:
+                title = podcast.feed.title
+            except:
+                title = feed
+            print ("Checking",title, end = "...\n")
+            sync_by_date(feeds, feed, podcast, DATA_FILENAME)
         else:
             msg = ''.join(["I cannot sync " , feed , " just now. Are you connected to the internet?"])
             print(msg, file = sys.stderr, flush = True)
+        
+def check_directory(feed, podcast): # Find out, and create if needed, the directory in which the feed will be downloaded
+    DOWNLOAD_PATH = retrieve_download_path(feed)[0]
+    subdirectory = retrieve_download_path(feed)[1]
+    if subdirectory == "title":
+        try:
+            directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
+        except:
+            print("You want me to use the feed title to name the directory in which this podcast is saved, but this feed apparently has no title. I will use the name you gave me for it.", file = sys.stderr, flush = True)
+            directory = os.path.join(DOWNLOAD_PATH, feed)
+    elif subdirectory == "name":
+        directory = os.path.join(DOWNLOAD_PATH, feed)
+    else:
+        directory = DOWNLOAD_PATH
+    ensure_dir(directory)
+    return directory
+
+def sync_by_date(feeds, feed, podcast, DATA_FILENAME): # Download entries later than downloadfrom in the feed
+    directory = check_directory(feed, podcast)
+    willtag = will_tag(feed)
+    if "downloadfrom" in feeds[feed]:
+        if feeds[feed]["downloadfrom"] != None:
+            latest = eval(feeds[feed]["downloadfrom"])
+        else:
+            latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
+    else:
+        latest = [1,1,1,0,0] # If there is no latest downloadfrom date, download all
+    entrytimes = [latest] # Here we will put the times of each entry, to choose the max for "latest"
+    for entry in podcast.entries:
+        try: 
+            entrydate = list(entry.updated_parsed)
+        except TypeError:
+            try:
+                entrydate = list(entry.published_parsed)
+            except TypeError:
+                print("I'm sorry. I cannot parse the time information of this feed. If you possibly can, please report an issue at github.com/manolomartinez/greg.", file = sys.stderr, flush = True)
+                break
+        if entrydate > latest:
+            entrytimes.append(entrydate)
+            feeds[feed]["downloadfrom"]=str(max(entrytimes))
+            print ("Downloading", entry.title)
+            for enclosure in entry.enclosures: # We will download all audio enclosures
+                if "audio" in enclosure["type"]: # if it's an audio file
+                    podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
+                    podpath = os.path.join(directory, podname)
+                    try:
+                        urlretrieve(enclosure["href"], podpath)
+                        if willtag:
+                            tag(entry, podcast, podpath)
+                    except URLError:
+                        sys.exit ("... something went wrong. Are you sure you are connected to the internet?")
+        with open(DATA_FILENAME, 'w') as configfile: # We write to configfile this often to ensure that downloaded entries count as downloaded.
+            feeds.write(configfile)
+    # 
+    # New downloadfrom: the date of the latest feed update.
+    # 
+    print ("Done")
+
 
 def check(args):
     DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
