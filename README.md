@@ -11,7 +11,7 @@ Let's start by adding a feed (RSS or Atom versions will do):
 
 The `add` command expects a name and a url of an RSS or Atom feed. You will use this name to refer to the feed whenever you interact with it.
 
-If you were to run `greg sync` now, it would download every available episode of the podcast to the default directory (which is `~/Podcasts`). But maybe we just want to check out what this podcast is all about, so we download a list of available entries:
+If you were to run `greg sync` now, it would download the latest episode of the podcast to the default directory (which is `~/Podcasts`; you can change how many episodes are dowloaded in the first sync, and the download directory, in the config file; see below). But maybe we just want to check out what this podcast is all about, so we download a list of available entries:
 
     greg check PhilosophyBites
    
@@ -52,7 +52,7 @@ and Greg says
     Done
     Downloading Galen Strawson on the Sense of Self
 
-As you can see, `greg download` accepts a range of episodes of the kind `a, b, c-f, h, ...`. The numbers make reference to the numbers at the beginning of each entry provided by `greg check`. `check` creates a persistent file (`~/.local/share/greg/feeddump`), so `download` will keep on working, and referring to the last `check` ever done.
+As you can see, `greg download` accepts a range of episodes of the kind `a, b, c-f, h, ...`. The numbers make reference to the numbers at the beginning of each entry provided by `greg check`. `check` creates a persistent file (`~/.local/share/greg/data/feeddump`), so `download` will keep on working, and referring to the last `check` ever done.
 
 All of these podcasts will be downloaded to the download directory (again, `~/Podcasts` by default. We'll learn how to change that soon.) After listening to them we decide that this podcast is well worth our time, and keep it, or we decide that it's not, and
 
