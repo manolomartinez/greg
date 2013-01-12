@@ -336,9 +336,9 @@ def sync(args):
                     if podname not in entrylinks:
                         if linkdate > currentdate and entrycounter < stop:
                             try:
-                                print ("Downloading", entry.title)
+                                print ("Downloading {} -- {}".format(entry.title, podname))
                             except:
-                                print ("Downloading entry")
+                                print ("Downloading entry -- {}".format(podname))
                             try:
                                 podpath = os.path.join(directory, podname)
                                 urlretrieve(enclosure["href"], podpath)
