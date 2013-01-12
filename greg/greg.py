@@ -102,10 +102,7 @@ def retrieve_download_path(feed): # Retrieves the download path (looks first int
 
 def will_tag(feed): # Checks whether the feed should be tagged (looks first into CONFIG_FILENAME_GLOBAL
     # then into the [DEFAULT], then the [feed], section of CONFIG_FILENAME_USER. The latest takes preeminence)
-    config = configparser.ConfigParser()
-    config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
-    section = feed if config.has_section(feed) else config.default_section
-    wanttags = config.get(section, 'Tag', fallback='no')
+    wanttags = retrieve_config(feed, 'Tag', 'no')
     if wanttags == 'yes':
         if staggerexists:
             willtag = True
@@ -145,8 +142,6 @@ def check_directory(feed, podcast): # Find out, and create if needed, the direct
 
 def get_date(line):
     date = eval(line.split(sep=' ', maxsplit = 1)[1])
-    print(date)
-    print(type(date))
     return date
 
 def has_date(podcast):
@@ -161,9 +156,6 @@ def has_date(podcast):
             print("I cannot parse the time information of this feed. If you possibly can, please report an issue at github.com/manolomartinez/greg. I'll go ahead and use your current local time instead.", file = sys.stderr, flush = True)
             sync_by_date = False
     return sync_by_date
-
-def hashy(entry):
-    return hashlib.md5(str(entry).encode('utf-8')).hexdigest()
 
 # The following are the functions that correspond to the different commands
 
@@ -198,7 +190,9 @@ def edit(args): # Edits the information associated with a certain feed
             try:
                 dateinfo = (feeds[args.name]["date_info"] == "not available")
             except KeyError:
-                feeds[args.name]["date_info"] = ""
+                feeds[args.name]["date_info"] = "available" # provisionally!
+                with open(DATA_FILENAME, 'w') as configfile:
+                    feeds.write(configfile)
                 dateinfo = False #provisionally
             if dateinfo:
                 print("{} has no date information that I can use. Using --downloadfrom might not have the results that you expect.", file = sys.stderr, flush = True)
@@ -217,12 +211,14 @@ def edit(args): # Edits the information associated with a certain feed
                     currentfile.write(line)
 
 def remove(args): # Removes a certain feed
-    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
+    DATA_DIR = retrieve_data_directory()
+    DATA_FILENAME =  os.path.join(DATA_DIR, "data")
+    FEED_INFO =  os.path.join(DATA_DIR, args.name)
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     if not(args.name in feeds):
         sys.exit("You don't have a feed with that name.")
-    inputtext = "Are you sure you want to remove the {0} feed? (y/N) ".format(args.name)
+    inputtext = "Are you sure you want to remove the {} feed? (y/N) ".format(args.name)
     reply = input(inputtext)
     if reply != "y" and reply != "Y": 
         return 0
@@ -230,6 +226,10 @@ def remove(args): # Removes a certain feed
         feeds.remove_section(args.name)
         with open(DATA_FILENAME, 'w') as configfile:
             feeds.write(configfile)
+        try:
+            os.remove(os.path.join(DATA_DIR, args.name))
+        except FileNotFoundError:
+            pass
 
 def info(args): # Provides information of a number of feeds
     if "all" in args.names:
