@@ -51,8 +51,9 @@ parser_add.set_defaults(func=greg.greg.add)
 # create the parser for the "edit" command
 parser_edit = subparsers.add_parser('edit', help='edits a feed')
 parser_edit.add_argument('name', help='the name of the feed to be edited')
-parser_edit.add_argument('--url', '-u', type = url, help='the new url for the feed')
-parser_edit.add_argument('--downloadfrom', '-d', type=from_date, help='the date from which files should be downloaded [%Y-%m-%d]')
+group = parser_edit.add_mutually_exclusive_group(required = True)
+group.add_argument('--url', '-u', type = url, help='the new url of the feed')
+group.add_argument('--downloadfrom', '-d', type=from_date, help='the date from which files should be downloaded [dd/mm/yy]')
 parser_edit.set_defaults(func=greg.greg.edit)
 
 # create the parser for the "info" command
@@ -71,7 +72,9 @@ parser_sync.set_defaults(func=greg.greg.sync)
 
 # create the parser for the "check" command
 parser_check = subparsers.add_parser('check', help='checks feed(s)')
-parser_check.add_argument('name', help='the name of the feed you want to check')
+group = parser_check.add_mutually_exclusive_group(required = True)
+group.add_argument('--url', '-u', type = url, help='the url that you want to check')
+group.add_argument('--feed', '-f', help='the feed that you want to check')
 parser_check.set_defaults(func=greg.greg.check)
 
 # create the parser for the "download" command
@@ -87,9 +90,9 @@ parser_remove.set_defaults(func=greg.greg.remove)
 def main(): # parse the args and call whatever function was selected
     try:
         args = parser.parse_args(sys.argv[1:])
-        args.func(args)
+        args.func(vars(args))
     except AttributeError as err:
         if str(err) == "\'Namespace\' object has no attribute \'func\'":
             parser.print_help()
         else:
-            print("Something has gone wrong: {}".format(err))
+            print("Something has gone wrong: {}".format(err), file = sys.stderr, flush = True)

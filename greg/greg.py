@@ -152,10 +152,33 @@ def has_date(podcast):
         try:
             test = podcast.feed.updated_parsed
             sync_by_date = True
-        except AttributeError: # Otherwise, we use entry hashes.
+        except AttributeError: # Otherwise, we use download links.
             print("I cannot parse the time information of this feed. If you possibly can, please report an issue at github.com/manolomartinez/greg. I'll go ahead and use your current local time instead.", file = sys.stderr, flush = True)
             sync_by_date = False
     return sync_by_date
+
+def transition(feed, feeds): # A function to ease the transition to individual feed files
+    if "downloadfrom" in feeds[feed]:
+        edit({"downloadfrom":eval(feeds[feed]["downloadfrom"]), "name":feed}) # edit() is usually called from the outside
+        DATA_DIR = retrieve_data_directory()
+        DATA_FILENAME =  os.path.join(DATA_DIR, "data")
+        feeds.remove_option(feed, "downloadfrom")
+        with open(DATA_FILENAME, 'w') as configfile:
+            feeds.write(configfile)
+
+def parse_feed_info(FEED_INFO):
+    entrylinks = []
+    linkdates = []
+    try:
+        with open(FEED_INFO, 'r') as previous:
+            for line in previous:
+                entrylinks.append(line.split(sep=' ')[0]) # This is the list of already downloaded entry links
+                linkdates.append(eval(line.split(sep=' ', maxsplit = 1)[1])) # This is the list of already downloaded entry dates
+    except FileNotFoundError:
+        pass
+    return entrylinks, linkdates
+
+
 
 # The following are the functions that correspond to the different commands
 
@@ -163,34 +186,36 @@ def add(args): # Adds a new feed
     DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
     config = configparser.ConfigParser()
     config.read(DATA_FILENAME)
-    if args.name in config.sections():
+    if args["name"] in config.sections():
         sys.exit("You already have a feed with that name.")
+    if args["name"] in ["all"]:
+        sys.exit("greg uses ""{}"" for a special purpose. Choose another name for your feed.".format(args["name"]))
     entry = {}
-    for key,value in vars(args).items():
+    for key,value in args.items():
         if value != None and key != "func" and key != "name":
             entry[key] = value
-    config[args.name] = entry
+    config[args["name"]] = entry
     with open(DATA_FILENAME, 'w') as configfile:
         config.write(configfile)
 
 def edit(args): # Edits the information associated with a certain feed
     DATA_DIR = retrieve_data_directory()
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
-    FEED_INFO =  os.path.join(DATA_DIR, args.name)
+    FEED_INFO =  os.path.join(DATA_DIR, args["name"])
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
-    if not(args.name in feeds):
+    if not(args["name"] in feeds):
         sys.exit("You don't have a feed with that name.")
-    for key,value in vars(args).items():
+    for key,value in args.items():
         if value != None and key == "url":
-            feeds[args.name][key] = str(value)
+            feeds[args["name"]][key] = str(value)
             with open(DATA_FILENAME, 'w') as configfile:
                 feeds.write(configfile)
         if value != None and key == "downloadfrom":
             try:
-                dateinfo = (feeds[args.name]["date_info"] == "not available")
+                dateinfo = (feeds[args["name"]]["date_info"] == "not available")
             except KeyError:
-                feeds[args.name]["date_info"] = "available" # provisionally!
+                feeds[args["name"]]["date_info"] = "available" # provisionally!
                 with open(DATA_FILENAME, 'w') as configfile:
                     feeds.write(configfile)
                 dateinfo = False #provisionally
@@ -213,45 +238,45 @@ def edit(args): # Edits the information associated with a certain feed
 def remove(args): # Removes a certain feed
     DATA_DIR = retrieve_data_directory()
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
-    FEED_INFO =  os.path.join(DATA_DIR, args.name)
+    FEED_INFO =  os.path.join(DATA_DIR, args["name"])
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
-    if not(args.name in feeds):
+    if not(args["name"] in feeds):
         sys.exit("You don't have a feed with that name.")
-    inputtext = "Are you sure you want to remove the {} feed? (y/N) ".format(args.name)
+    inputtext = "Are you sure you want to remove the {} feed? (y/N) ".format(args["name"])
     reply = input(inputtext)
     if reply != "y" and reply != "Y": 
         return 0
     else:
-        feeds.remove_section(args.name)
+        feeds.remove_section(args["name"])
         with open(DATA_FILENAME, 'w') as configfile:
             feeds.write(configfile)
         try:
-            os.remove(os.path.join(DATA_DIR, args.name))
+            os.remove(os.path.join(DATA_DIR, args["name"]))
         except FileNotFoundError:
             pass
 
 def info(args): # Provides information of a number of feeds
-    if "all" in args.names:
+    if "all" in args["names"]:
         feeds = list_feeds()
     else:
-        feeds = args.names
+        feeds = args["names"]
     for feed in feeds:
         pretty_print(feed)
 
 def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
     print ()
     DATA_DIR = retrieve_data_directory()
+    FEED_INFO =  os.path.join(DATA_DIR, feed)
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
+    entrylinks, linkdates = parse_feed_info(FEED_INFO)
     print (feed)
     print ("-"*len(feed))
     print (''.join(["    url: " , feeds[feed]["url"]]))
-    if "downloadfrom" in feeds[feed]:
-        if feeds[feed]["downloadfrom"] != None:
-            feedtime = tuple(eval(feeds[feed]["downloadfrom"]))
-            print (''.join(["    Next sync will download from: ", time.strftime("%d %b %Y %H:%M:%S", feedtime),"."]))
+    if linkdates != []:
+        print (''.join(["    Next sync will download from: ", time.strftime("%d %b %Y %H:%M:%S", tuple(max(linkdates))),"."]))
 
 def list_for_user(args):
     for feed in list_feeds():
@@ -270,16 +295,17 @@ def sync(args):
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
-    if "all" in args.names:
+    if "all" in args["names"]:
         targetfeeds = list_feeds()
     else:
         targetfeeds = []
-        for name in args.names:
+        for name in args["names"]:
             if name not in feeds:
                 print("You don't have a feed called {}.".format(name), file = sys.stderr, flush = True)
             else:
                 targetfeeds.append(name)
     for feed in targetfeeds:
+        transition(feed, feeds)
         podcast = feedparser.parse(feeds[feed]["url"])
         directory = check_directory(feed, podcast)
         willtag = will_tag(feed)
@@ -296,29 +322,24 @@ def sync(args):
             sync_by_date = has_date(podcast)
             if not sync_by_date:
                 feeds[feed]["date_info"] = "not available"
+                with open(DATA_FILENAME, 'w') as configfile:
+                    feeds.write(configfile)
+            else:
+                feeds[feed]["date_info"] = "available"
+                with open(DATA_FILENAME, 'w') as configfile:
+                    feeds.write(configfile)
             FEED_INFO = os.path.join(DATA_DIR, feed)
-            entrylinks = []
-            linkdates = []
-            try:
-                with open(FEED_INFO, 'r') as previous:
-                    for line in previous:
-                        entrylinks.append(line.split(sep=' ')[0]) # This is the list of already downloaded entry hashes
-                        linkdates.append(eval(line.split(sep=' ', maxsplit = 1)[1])) # This is the list of already downloaded entry dates
-                try:
-                    currentdate = max(linkdates)
-                except ValueError:
-                    currentdate = [1,1,1,0,0]
-            except FileNotFoundError:
-                currentdate = [1,1,1,0,0]
-            if entrylinks == []:
+            entrylinks, linkdates = parse_feed_info(FEED_INFO)
+            if linkdates != []:
+                currentdate = max(linkdates)
+                stop = 10^6
+            else:
                 currentdate = [1,1,1,0,0]
                 firstsync = retrieve_config(feed, 'firstsync', '1')
                 if firstsync == 'all':
                     stop = 10^6 # I'm guessing no feed in the world will have more than a million entries 
                 else:
                     stop = int(firstsync)
-            else:
-                stop = 10^6
             entrycounter = 0
             for entry in podcast.entries:
                 if sync_by_date:
@@ -355,16 +376,22 @@ def sync(args):
             print(msg, file = sys.stderr, flush = True)
         
 def check(args):
-    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
+    DATA_DIR = retrieve_data_directory()
+    DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
+    if str(args.url) != 'None':
+        url = args.url
+        name = "DEFAULT"
+    else:
+        url = feeds[args.feed]["url"]
+        name = args.feed
     try:
-        wentwrong = "urlopen" in str(feedparser.parse(feeds[args.name]["url"])["bozo_exception"])
+        podcast = feedparser.parse(url)
+        wentwrong = "urlopen" in podcast["bozo_exception"]
     except KeyError:
         wentwrong = False
-    if not(wentwrong):
-        podcast = feedparser.parse(feeds[args.name]["url"])
-    else:
+    if wentwrong:
         sys.exit("I cannot check that podcast now. You are probably not connected to the internet.")
     for entry in enumerate(podcast.entries):
         listentry=list(entry)
@@ -378,10 +405,10 @@ def check(args):
         except:
             print ("", end =")")
         print ()
-    DATA_DIRECTORY = retrieve_data_directory()
-    dumpfilename = os.path.join(DATA_DIRECTORY, 'feeddump')
+    dumpfilename = os.path.join(DATA_DIR, 'feeddump')
     with open(dumpfilename, mode='wb') as dumpfile:
-        pickle.dump(podcast, dumpfile)
+        dump = [name, podcast]
+        pickle.dump(dump, dumpfile)
 
 def download(args):
     issues = parse_for_download(args)
@@ -390,14 +417,14 @@ def download(args):
     if not(os.path.isfile(dumpfilename)):
         sys.exit("You need to run ""greg check <feed>"" before using ""greg download"".")
     with open(dumpfilename, mode='rb') as dumpfile:
-        podcast = pickle.load(dumpfile)
+        dump = pickle.load(dumpfile)
         try:
-            directory = retrieve_download_path("DEFAULT")[0]
+            directory = check_directory(dump[0], dump[1])
         except Exception:
             sys.exit("... something went wrong. Are you sure your last check went well?")
         ensure_dir(directory)
         for number in issues:
-            entry = podcast.entries[eval(number)]
+            entry = dump[1].entries[eval(number)]
             try:
                 print ("Downloading", entry.title)
             except:
