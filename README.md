@@ -43,7 +43,7 @@ This will give you the following kind of info:
 
 Interesting stuff. We'll download a couple of episodes, just to make sure that it's really worth it:
 
-    grep download 1, 5-7
+    greg download 1, 5-7
 
 and Greg says
 
