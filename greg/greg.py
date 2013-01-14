@@ -61,7 +61,7 @@ def ensure_dir(dirname):
 def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a list such as [4,6,7,8,10]
     single_arg="" # in the first bit we put all arguments together and take out any extra spaces
     list_of_feeds=[]
-    for arg in args.number:
+    for arg in args["number"]:
         single_arg = ''.join([single_arg , " " , arg])
     single_arg = single_arg.translate({32:None}) # eliminates spaces
     for group in single_arg.split(sep=","):
@@ -380,12 +380,12 @@ def check(args):
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
-    if str(args.url) != 'None':
-        url = args.url
+    if str(args["url"]) != 'None':
+        url = args["url"]
         name = "DEFAULT"
     else:
-        url = feeds[args.feed]["url"]
-        name = args.feed
+        url = feeds[args["feed"]]["url"]
+        name = args["feed"]
     try:
         podcast = feedparser.parse(url)
         wentwrong = "urlopen" in podcast["bozo_exception"]
@@ -425,13 +425,13 @@ def download(args):
         ensure_dir(directory)
         for number in issues:
             entry = dump[1].entries[eval(number)]
-            try:
-                print ("Downloading", entry.title)
-            except:
-                print("Downloading entry")
             for enclosure in entry.enclosures:
                 if "audio" in enclosure["type"]: # if it's an audio file
                     podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
+                    try:
+                        print ("Downloading {} -- {}".format(entry.title, podname))
+                    except:
+                       print("Downloading entry -- {}".format(podname))
                     try:
                         urlretrieve(enclosure["href"], os.path.join(directory, podname))
                         print("Done")
