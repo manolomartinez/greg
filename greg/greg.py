@@ -153,7 +153,7 @@ def has_date(podcast):
             test = podcast.feed.updated_parsed
             sync_by_date = True
         except AttributeError: # Otherwise, we use download links.
-            print("I cannot parse the time information of this feed. If you possibly can, please report an issue at github.com/manolomartinez/greg. I'll go ahead and use your current local time instead.", file = sys.stderr, flush = True)
+            print("I cannot parse the time information of this feed. I'll use your current local time instead.", file = sys.stderr, flush = True)
             sync_by_date = False
     return sync_by_date
 
