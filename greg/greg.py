@@ -115,7 +115,8 @@ def will_tag(feed): # Checks whether the feed should be tagged (looks first into
 
 def retrieve_mime(feed): # Checks the mime-type to download
     mime = retrieve_config(feed, 'mime', 'audio')
-    return parse_for_download(mime)
+    mimedict = {"number":mime} # the input that parse_for_download expects
+    return parse_for_download(mimedict)
 
 def tag(feed, entry, podcast, podpath): # Tags the file at podpath with the information in podcast and entry
     try:
@@ -182,6 +183,15 @@ def parse_feed_info(FEED_INFO):
         pass
     return entrylinks, linkdates
 
+def download_handler(feed, link, filename, directory, fullpath):
+    value = retrieve_config(feed, 'downloadhandler', 'greg')
+    if value == 'greg':
+        while os.path.isfile(fullpath):
+            fullpath = fullpath + '_'
+        urlretrieve(link, fullpath)
+    else:
+        instruction = value.format(link = link, filename = filename, directory = directory, fullpath = fullpath)
+        os.system(instruction)
 
 
 # The following are the functions that correspond to the different commands
@@ -368,7 +378,7 @@ def sync(args):
                                 print ("Downloading entry -- {}".format(podname))
                             try:
                                 podpath = os.path.join(directory, podname)
-                                urlretrieve(enclosure["href"], podpath)
+                                download_handler(feed, enclosure["href"],podname,directory,podpath)
                                 if willtag:
                                     tag(feed, entry, podcast, podpath)
                             except URLError:
