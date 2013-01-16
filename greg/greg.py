@@ -113,6 +113,10 @@ def will_tag(feed): # Checks whether the feed should be tagged (looks first into
         willtag = False
     return willtag
 
+def retrieve_mime(feed): # Checks the mime-type to download
+    mime = retrieve_config(feed, 'mime', 'audio')
+    return parse_for_download(mime)
+
 def tag(feed, entry, podcast, podpath): # Tags the file at podpath with the information in podcast and entry
     try:
         stagger.util.set_frames(podpath, {"artist":podcast.feed.title})
@@ -309,6 +313,7 @@ def sync(args):
         podcast = feedparser.parse(feeds[feed]["url"])
         directory = check_directory(feed, podcast)
         willtag = will_tag(feed)
+        mime = retrieve_mime(feed)
         try:
             wentwrong = "URLError" in str(podcast["bozo_exception"])
         except KeyError:
@@ -350,8 +355,9 @@ def sync(args):
                 else:
                     linkdate = list(time.localtime())
                 downloadlinks = []
-                for enclosure in entry.enclosures: # We will download all audio enclosures
-                    if "audio" in enclosure["type"]: # if it's an audio file
+                for enclosure in entry.enclosures: 
+                    # We will download all enclosures of the desired mime-type
+                    if any([mimetype in enclosure["type"] for mimetype in mime]): 
                         downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
                 for podname in downloadlinks: 
                     if podname not in entrylinks:
