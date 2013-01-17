@@ -183,8 +183,11 @@ def parse_feed_info(FEED_INFO):
         pass
     return entrylinks, linkdates
 
-def download_handler(feed, link, filename, directory, fullpath):
-    value = retrieve_config(feed, 'downloadhandler', 'greg')
+def download_handler(args, feed, link, filename, directory, fullpath):
+    if args["downloadhandler"]:
+        value = args["downloadhandler"]
+    else:
+        value = retrieve_config(feed, 'downloadhandler', 'greg')
     if value == 'greg':
         while os.path.isfile(fullpath):
             fullpath = fullpath + '_'
@@ -378,7 +381,7 @@ def sync(args):
                                 print ("Downloading entry -- {}".format(podname))
                             try:
                                 podpath = os.path.join(directory, podname)
-                                download_handler(feed, enclosure["href"],podname,directory,podpath)
+                                download_handler(args, feed, enclosure["href"],podname,directory,podpath)
                                 if willtag:
                                     tag(feed, entry, podcast, podpath)
                             except URLError:
@@ -434,26 +437,31 @@ def download(args):
         sys.exit("You need to run ""greg check <feed>"" before using ""greg download"".")
     with open(dumpfilename, mode='rb') as dumpfile:
         dump = pickle.load(dumpfile)
-        try:
-            directory = check_directory(dump[0], dump[1])
-        except Exception:
-            sys.exit("... something went wrong. Are you sure your last check went well?")
-        ensure_dir(directory)
-        for number in issues:
-            entry = dump[1].entries[eval(number)]
-            for enclosure in entry.enclosures:
-                if "audio" in enclosure["type"]: # if it's an audio file
-                    podname = urlparse(enclosure["href"]).path.split("/")[-1] # preserve the original name
-                    try:
-                        print ("Downloading {} -- {}".format(entry.title, podname))
-                    except:
-                       print("Downloading entry -- {}".format(podname))
-                    try:
-                        podpath = os.path.join(directory, podname)
-                        download_handler(dump[0], enclosure["href"],podname,directory,podpath)
-                        print("Done")
-                    except URLError:
-                        sys.exit("... something went wrong. Are you sure you are connected to the internet?")
+    mime = retrieve_mime(dump[0])
+    if args["mime"]:
+        mime = [args["mime"]]
+    try:
+        directory = check_directory(dump[0], dump[1])
+    except Exception:
+        sys.exit("... something went wrong. Are you sure your last check went well?")
+    ensure_dir(directory)
+    for number in issues:
+        entry = dump[1].entries[eval(number)]
+        downloadlinks = []
+        for enclosure in entry.enclosures:
+            if any([mimetype in enclosure["type"] for mimetype in mime]): 
+                downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
+            for podname in downloadlinks:
+                try:
+                    print ("Downloading {} -- {}".format(entry.title, podname))
+                except:
+                    print("Downloading entry -- {}".format(podname))
+                try:
+                    podpath = os.path.join(directory, podname)
+                    download_handler(args, dump[0], enclosure["href"],podname,directory,podpath)
+                    print("Done")
+                except URLError:
+                    sys.exit("... something went wrong. Are you sure you are connected to the internet?")
 
 
 

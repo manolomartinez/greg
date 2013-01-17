@@ -68,6 +68,7 @@ parser_info.set_defaults(func=greg.greg.list_for_user)
 # create the parser for the "sync" command
 parser_sync = subparsers.add_parser('sync', help='syncs feed(s)')
 parser_sync.add_argument('names', help='the name(s) of the feed(s) you want to sync', nargs='*', default='all')
+parser_sync.add_argument('--downloadhandler', '-dh', help='whatever you want greg to do with the enclosure')
 parser_sync.set_defaults(func=greg.greg.sync)
 
 # create the parser for the "check" command
@@ -80,6 +81,8 @@ parser_check.set_defaults(func=greg.greg.check)
 # create the parser for the "download" command
 parser_download = subparsers.add_parser('download', help='downloads particular issues of a feed')
 parser_download.add_argument('number', help='the issue numbers you want to download', nargs="*")
+parser_download.add_argument('--mime', help='(part of) the mime type of the enclosure to download')
+parser_download.add_argument('--downloadhandler', '-dh', help='whatever you want greg to do with the enclosure')
 parser_download.set_defaults(func=greg.greg.download)
 
 # create the parser for the "remove" command
