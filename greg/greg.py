@@ -404,7 +404,7 @@ def check(args):
         name = args["feed"]
     try:
         podcast = feedparser.parse(url)
-        wentwrong = "urlopen" in podcast["bozo_exception"]
+        wentwrong = "urlopen" in str(podcast["bozo_exception"])
     except KeyError:
         wentwrong = False
     if wentwrong:
@@ -449,7 +449,8 @@ def download(args):
                     except:
                        print("Downloading entry -- {}".format(podname))
                     try:
-                        urlretrieve(enclosure["href"], os.path.join(directory, podname))
+                        podpath = os.path.join(directory, podname)
+                        download_handler(dump[0], enclosure["href"],podname,directory,podpath)
                         print("Done")
                     except URLError:
                         sys.exit("... something went wrong. Are you sure you are connected to the internet?")
