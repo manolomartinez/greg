@@ -139,7 +139,10 @@ def check_directory(feed, podcast): # Find out, and create if needed, the direct
             print("You want me to use the feed title to name the directory in which this podcast is saved, but this feed apparently has no title. I will use the name you gave me for it.", file = sys.stderr, flush = True)
             directory = os.path.join(DOWNLOAD_PATH, feed)
     elif subdirectory == "name":
-        directory = os.path.join(DOWNLOAD_PATH, feed)
+        if feed != 'DEFAULT':
+            directory = os.path.join(DOWNLOAD_PATH, feed)
+        else:
+            directory = DOWNLOAD_PATH
     else:
         directory = DOWNLOAD_PATH
     ensure_dir(directory)
@@ -183,7 +186,7 @@ def parse_feed_info(FEED_INFO):
         pass
     return entrylinks, linkdates
 
-def download_handler(args, feed, link, filename, directory, fullpath):
+def download_handler(args, feed, link, filename, directory, fullpath, title):
     if args["downloadhandler"]:
         value = args["downloadhandler"]
     else:
@@ -193,7 +196,7 @@ def download_handler(args, feed, link, filename, directory, fullpath):
             fullpath = fullpath + '_'
         urlretrieve(link, fullpath)
     else:
-        instruction = value.format(link = link, filename = filename, directory = directory, fullpath = fullpath)
+        instruction = value.format(link = link, filename = filename, directory = directory, fullpath = fullpath, title = title)
         os.system(instruction)
 
 
@@ -205,8 +208,8 @@ def add(args): # Adds a new feed
     config.read(DATA_FILENAME)
     if args["name"] in config.sections():
         sys.exit("You already have a feed with that name.")
-    if args["name"] in ["all"]:
-        sys.exit("greg uses ""{}"" for a special purpose. Choose another name for your feed.".format(args["name"]))
+    if args["name"] in ["all", "DEFAULT"]:
+        sys.exit("greg uses ""{}"" for a special purpose. Please choose another name for your feed.".format(args["name"]))
     entry = {}
     for key,value in args.items():
         if value != None and key != "func" and key != "name":
@@ -237,7 +240,7 @@ def edit(args): # Edits the information associated with a certain feed
                     feeds.write(configfile)
                 dateinfo = False #provisionally
             if dateinfo:
-                print("{} has no date information that I can use. Using --downloadfrom might not have the results that you expect.", file = sys.stderr, flush = True)
+                print("{} has no date information that I can use. Using --downloadfrom might not have the results that you expect.".format(args["name"]), file = sys.stderr, flush = True)
             line =' '.join(["currentdate", str(value), "\n"]) # A dummy entry with the right date, in case we need it.
             try:
                 # Remove from the feed file all entries after or equal to downloadfrom
@@ -377,11 +380,13 @@ def sync(args):
                         if linkdate > currentdate and entrycounter < stop:
                             try:
                                 print ("Downloading {} -- {}".format(entry.title, podname))
+                                title = entry.title
                             except:
                                 print ("Downloading entry -- {}".format(podname))
+                                title = podname
                             try:
                                 podpath = os.path.join(directory, podname)
-                                download_handler(args, feed, enclosure["href"],podname,directory,podpath)
+                                download_handler(args, feed, enclosure["href"],podname,directory,podpath, title)
                                 if willtag:
                                     tag(feed, entry, podcast, podpath)
                             except URLError:
@@ -437,13 +442,13 @@ def download(args):
         sys.exit("You need to run ""greg check <feed>"" before using ""greg download"".")
     with open(dumpfilename, mode='rb') as dumpfile:
         dump = pickle.load(dumpfile)
-    mime = retrieve_mime(dump[0])
-    if args["mime"]:
-        mime = [args["mime"]]
     try:
-        directory = check_directory(dump[0], dump[1])
+        mime = retrieve_mime(dump[0])
+        if args["mime"]:
+            mime = [args["mime"]]
     except Exception:
         sys.exit("... something went wrong. Are you sure your last check went well?")
+    directory = check_directory(dump[0], dump[1])
     ensure_dir(directory)
     for number in issues:
         entry = dump[1].entries[eval(number)]
@@ -454,11 +459,13 @@ def download(args):
             for podname in downloadlinks:
                 try:
                     print ("Downloading {} -- {}".format(entry.title, podname))
+                    title = entry.title
                 except:
                     print("Downloading entry -- {}".format(podname))
+                    title = podname
                 try:
                     podpath = os.path.join(directory, podname)
-                    download_handler(args, dump[0], enclosure["href"],podname,directory,podpath)
+                    download_handler(args, dump[0], enclosure["href"],podname,directory,podpath, title)
                     print("Done")
                 except URLError:
                     sys.exit("... something went wrong. Are you sure you are connected to the internet?")
