@@ -31,7 +31,6 @@ except ImportError:
     staggerexists = False
 
 CONFIG_FILENAME_GLOBAL = '/etc/greg.conf'
-CONFIG_FILENAME_USER = os.path.expanduser('~/.config/greg/greg.conf')
 
 # Registering a custom date handler for feedparser
 
@@ -72,17 +71,39 @@ def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a lis
             list_of_feeds = list_of_feeds + [str(x) for x in range (eval(extremes[0]),eval(extremes[1])+1)]
     return list_of_feeds
 
-def retrieve_config(feed, value, default): # Retrieves a value (with a certain fallback) from the config files
+def retrieve_config_file(args): 
+    try:
+        if args["configfile"]:
+            return args["configfile"]
+    except KeyError:
+        pass
+    return os.path.expanduser('~/.config/greg/greg.conf')
+
+def retrieve_config(args, feed, value, default): # Retrieves a value (with a certain fallback) from the config files
     # (looks first into CONFIG_FILENAME_GLOBAL
     # then into CONFIG_FILENAME_USER. The latest takes preeminence)
+    # if the command line flag for the value is use, that overrides everything else
+    CONFIG_FILENAME_USER = retrieve_config_file(args)
+    try:
+        if args[value]:
+            return value
+    except KeyError:
+        pass
     config = configparser.ConfigParser()
     config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
     section = feed if config.has_section(feed) else config.default_section
     answer = config.get(section,value, fallback=default)
     return answer
 
-def retrieve_data_directory(): # Retrieves the data directory (looks first into CONFIG_FILENAME_GLOBAL
+def retrieve_data_directory(args): # Retrieves the data directory (looks first into CONFIG_FILENAME_GLOBAL
     # then into CONFIG_FILENAME_USER. The latest takes preeminence)
+    try:
+        if args['datadirectory']:
+            ensure_dir(args['datadirectory'])
+            return args['datadirectory']
+    except KeyError:
+        pass
+    CONFIG_FILENAME_USER = retrieve_config_file(args)
     config = configparser.ConfigParser()
     config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
     section = config.default_section
@@ -91,8 +112,9 @@ def retrieve_data_directory(): # Retrieves the data directory (looks first into 
     ensure_dir(data_path_expanded)
     return os.path.expanduser(data_path_expanded)   
         
-def retrieve_download_path(feed): # Retrieves the download path (looks first into CONFIG_FILENAME_GLOBAL
+def retrieve_download_path(args, feed): # Retrieves the download path (looks first into CONFIG_FILENAME_GLOBAL
     # then into the [DEFAULT], then the [feed], section of CONFIG_FILENAME_USER. The latest takes preeminence)
+    CONFIG_FILENAME_USER = retrieve_config_file(args)
     config = configparser.ConfigParser()
     config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
     section = feed if config.has_section(feed) else config.default_section
@@ -100,9 +122,8 @@ def retrieve_download_path(feed): # Retrieves the download path (looks first int
     subdirectory = config.get(section, 'Create subdirectories', fallback='no')
     return [os.path.expanduser(download_path), subdirectory]   
 
-def will_tag(feed): # Checks whether the feed should be tagged (looks first into CONFIG_FILENAME_GLOBAL
-    # then into the [DEFAULT], then the [feed], section of CONFIG_FILENAME_USER. The latest takes preeminence)
-    wanttags = retrieve_config(feed, 'Tag', 'no')
+def will_tag(args, feed): # Checks whether the feed should be tagged 
+    wanttags = retrieve_config(args, feed, 'Tag', 'no')
     if wanttags == 'yes':
         if staggerexists:
             willtag = True
@@ -113,8 +134,8 @@ def will_tag(feed): # Checks whether the feed should be tagged (looks first into
         willtag = False
     return willtag
 
-def retrieve_mime(feed): # Checks the mime-type to download
-    mime = retrieve_config(feed, 'mime', 'audio')
+def retrieve_mime(args, feed): # Checks the mime-type to download
+    mime = retrieve_config(args, feed, 'mime', 'audio')
     mimedict = {"number":mime} # the input that parse_for_download expects
     return parse_for_download(mimedict)
 
@@ -129,9 +150,15 @@ def tag(feed, entry, podcast, podpath): # Tags the file at podpath with the info
         stagger.util.set_frames(podpath, {"title":entry.link})
     stagger.util.set_frames(podpath, {"genre":"Podcast"})
 
-def check_directory(feed, podcast): # Find out, and create if needed, the directory in which the feed will be downloaded
-    DOWNLOAD_PATH = retrieve_download_path(feed)[0]
-    subdirectory = retrieve_download_path(feed)[1]
+def check_directory(args, feed, podcast): # Find out, and create if needed, the directory in which the feed will be downloaded
+    try:
+        if args["downloaddirectory"]:
+            ensure_dir(args["downloaddirectory"])
+            return args["downloaddirectory"]
+    except KeyError:
+        pass
+    DOWNLOAD_PATH = retrieve_download_path(args, feed)[0]
+    subdirectory = retrieve_download_path(args, feed)[1]
     if subdirectory == "title":
         try:
             directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
@@ -165,10 +192,10 @@ def has_date(podcast):
             sync_by_date = False
     return sync_by_date
 
-def transition(feed, feeds): # A function to ease the transition to individual feed files
+def transition(args, feed, feeds): # A function to ease the transition to individual feed files
     if "downloadfrom" in feeds[feed]:
         edit({"downloadfrom":eval(feeds[feed]["downloadfrom"]), "name":feed}) # edit() is usually called from the outside
-        DATA_DIR = retrieve_data_directory()
+        DATA_DIR = retrieve_data_directory(args)
         DATA_FILENAME =  os.path.join(DATA_DIR, "data")
         feeds.remove_option(feed, "downloadfrom")
         with open(DATA_FILENAME, 'w') as configfile:
@@ -187,10 +214,7 @@ def parse_feed_info(FEED_INFO):
     return entrylinks, linkdates
 
 def download_handler(args, feed, link, filename, directory, fullpath, title):
-    if args["downloadhandler"]:
-        value = args["downloadhandler"]
-    else:
-        value = retrieve_config(feed, 'downloadhandler', 'greg')
+    value = retrieve_config(args, feed, 'downloadhandler', 'greg')
     if value == 'greg':
         while os.path.isfile(fullpath):
             fullpath = fullpath + '_'
@@ -203,7 +227,7 @@ def download_handler(args, feed, link, filename, directory, fullpath, title):
 # The following are the functions that correspond to the different commands
 
 def add(args): # Adds a new feed
-    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(args), "data")
     config = configparser.ConfigParser()
     config.read(DATA_FILENAME)
     if args["name"] in config.sections():
@@ -219,7 +243,7 @@ def add(args): # Adds a new feed
         config.write(configfile)
 
 def edit(args): # Edits the information associated with a certain feed
-    DATA_DIR = retrieve_data_directory()
+    DATA_DIR = retrieve_data_directory(args)
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     FEED_INFO =  os.path.join(DATA_DIR, args["name"])
     feeds = configparser.ConfigParser()
@@ -256,7 +280,7 @@ def edit(args): # Edits the information associated with a certain feed
                     currentfile.write(line)
 
 def remove(args): # Removes a certain feed
-    DATA_DIR = retrieve_data_directory()
+    DATA_DIR = retrieve_data_directory(args)
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     FEED_INFO =  os.path.join(DATA_DIR, args["name"])
     feeds = configparser.ConfigParser()
@@ -278,15 +302,15 @@ def remove(args): # Removes a certain feed
 
 def info(args): # Provides information of a number of feeds
     if "all" in args["names"]:
-        feeds = list_feeds()
+        feeds = list_feeds(args)
     else:
         feeds = args["names"]
     for feed in feeds:
-        pretty_print(feed)
+        pretty_print(args, feed)
 
-def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
+def pretty_print(args, feed): # Prints the dictionary entry of a feed in a nice way.
     print ()
-    DATA_DIR = retrieve_data_directory()
+    DATA_DIR = retrieve_data_directory(args)
     FEED_INFO =  os.path.join(DATA_DIR, feed)
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     feeds = configparser.ConfigParser()
@@ -299,24 +323,24 @@ def pretty_print(feed): # Prints the dictionary entry of a feed in a nice way.
         print (''.join(["    Next sync will download from: ", time.strftime("%d %b %Y %H:%M:%S", tuple(max(linkdates))),"."]))
 
 def list_for_user(args):
-    for feed in list_feeds():
+    for feed in list_feeds(args):
         print (feed, end=" ")
     print ()
 
-def list_feeds(): # Outputs a list of all feed names
+def list_feeds(args): # Outputs a list of all feed names
     feedslist = []
-    DATA_FILENAME =  os.path.join(retrieve_data_directory(), "data")
+    DATA_FILENAME =  os.path.join(retrieve_data_directory(args), "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     return feeds.sections()
 
 def sync(args):
-    DATA_DIR = retrieve_data_directory()
+    DATA_DIR = retrieve_data_directory(args)
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
     if "all" in args["names"]:
-        targetfeeds = list_feeds()
+        targetfeeds = list_feeds(args)
     else:
         targetfeeds = []
         for name in args["names"]:
@@ -325,11 +349,11 @@ def sync(args):
             else:
                 targetfeeds.append(name)
     for feed in targetfeeds:
-        transition(feed, feeds)
+        transition(args, feed, feeds)
         podcast = feedparser.parse(feeds[feed]["url"])
-        directory = check_directory(feed, podcast)
-        willtag = will_tag(feed)
-        mime = retrieve_mime(feed)
+        directory = check_directory(args, feed, podcast)
+        willtag = will_tag(args, feed)
+        mime = retrieve_mime(args, feed)
         try:
             wentwrong = "URLError" in str(podcast["bozo_exception"])
         except KeyError:
@@ -356,7 +380,7 @@ def sync(args):
                 stop = 10^6
             else:
                 currentdate = [1,1,1,0,0]
-                firstsync = retrieve_config(feed, 'firstsync', '1')
+                firstsync = retrieve_config(args, feed, 'firstsync', '1')
                 if firstsync == 'all':
                     stop = 10^6 # I'm guessing no feed in the world will have more than a million entries 
                 else:
@@ -400,7 +424,7 @@ def sync(args):
             print(msg, file = sys.stderr, flush = True)
         
 def check(args):
-    DATA_DIR = retrieve_data_directory()
+    DATA_DIR = retrieve_data_directory(args)
     DATA_FILENAME =  os.path.join(DATA_DIR, "data")
     feeds = configparser.ConfigParser()
     feeds.read(DATA_FILENAME)
@@ -436,19 +460,19 @@ def check(args):
 
 def download(args):
     issues = parse_for_download(args)
-    DATA_DIRECTORY = retrieve_data_directory()
+    DATA_DIRECTORY = retrieve_data_directory(args)
     dumpfilename = os.path.join(DATA_DIRECTORY, 'feeddump')
     if not(os.path.isfile(dumpfilename)):
         sys.exit("You need to run ""greg check <feed>"" before using ""greg download"".")
     with open(dumpfilename, mode='rb') as dumpfile:
         dump = pickle.load(dumpfile)
     try:
-        mime = retrieve_mime(dump[0])
+        mime = retrieve_mime(args, dump[0])
         if args["mime"]:
             mime = [args["mime"]]
     except Exception:
         sys.exit("... something went wrong. Are you sure your last check went well?")
-    directory = check_directory(dump[0], dump[1])
+    directory = check_directory(args, dump[0], dump[1])
     ensure_dir(directory)
     for number in issues:
         entry = dump[1].entries[eval(number)]
