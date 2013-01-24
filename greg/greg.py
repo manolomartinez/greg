@@ -86,7 +86,7 @@ def retrieve_config(args, feed, value, default): # Retrieves a value (with a cer
     CONFIG_FILENAME_USER = retrieve_config_file(args)
     try:
         if args[value]:
-            return value
+            return args[value]
     except KeyError:
         pass
     config = configparser.ConfigParser()
