@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Greg.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, sys, configparser, pickle, time, re
+import configparser, os, pickle, subprocess, sys, time, re
 from itertools import islice, filterfalse
 from urllib.request import urlretrieve
 from urllib.parse import urlparse 
@@ -221,7 +221,8 @@ def download_handler(args, feed, link, filename, directory, fullpath, title):
         urlretrieve(link, fullpath)
     else:
         instruction = value.format(link = link, filename = filename, directory = directory, fullpath = fullpath, title = title)
-        os.system(instruction)
+        instructionlist = instruction.split(sep = " ")
+        subprocess.call(instructionlist)
 
 
 # The following are the functions that correspond to the different commands
