@@ -481,19 +481,19 @@ def download(args):
         for enclosure in entry.enclosures:
             if any([mimetype in enclosure["type"] for mimetype in mime]): 
                 downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
-            for podname in downloadlinks:
-                try:
-                    print ("Downloading {} -- {}".format(entry.title, podname))
-                    title = entry.title
-                except:
-                    print("Downloading entry -- {}".format(podname))
-                    title = podname
-                try:
-                    podpath = os.path.join(directory, podname)
-                    download_handler(args, dump[0], enclosure["href"],podname,directory,podpath, title)
-                    print("Done")
-                except URLError:
-                    sys.exit("... something went wrong. Are you sure you are connected to the internet?")
+        for podname in downloadlinks:
+            try:
+                print ("Downloading {} -- {}".format(entry.title, podname))
+                title = entry.title
+            except:
+                print("Downloading entry -- {}".format(podname))
+                title = podname
+            try:
+                podpath = os.path.join(directory, podname)
+                download_handler(args, dump[0], enclosure["href"],podname,directory,podpath, title)
+                print("Done")
+            except URLError:
+                sys.exit("... something went wrong. Are you sure you are connected to the internet?")
 
 
 
