@@ -19,27 +19,27 @@ If you were to run `greg sync` now, it would download the latest episode of the 
 
 This will give you the following kind of info:
    
-    0: John Campbell on Schizophrenia (2013-01-08T12:41:27+00:00)
-    1: Kendall Walton on Photography (2012-12-23T12:33:09+00:00)
-    2: Twitter Competition: Who's Your Favourite Philosopher? (2012-12-11T07:24:51+00:00)
-    3: Alan Ryan on Freedom and Its History (2012-12-08T11:16:45+00:00)
-    4: Nigel Warburton at Blackwell's Bookshop, Oxford 7pm Wed. Dec. 5th (2012-12-01T11:19:09+00:00)
-    5: Who's Your Favourite Philosopher? (2012-11-30T18:33:56+00:00)
-    6: Peter Adamson on Avicenna's Flying Man Thought Experiment (2012-11-26T15:57:18+00:00)
-    7: Links to Past Episodes (2012-12-01T11:53:03+00:00)
-    8: Tim Bayne on the Unity of  Consciousness (2012-11-11T22:20:17+00:00)
-    9: Galen Strawson on the Sense of Self (2012-05-05T12:56:05+01:00)
-    10: Liane Young on Mind and Morality (2012-10-27T12:39:22+01:00)
-    11: Gary L. Francione on Animal Abolitionism (2012-10-13T13:48:32+01:00)
-    12: Richard Sorabji on Mahatma Gandhi as Philosopher (2012-09-28T13:18:08+01:00)
-    13: Tim Crane on Non-Existence (2012-09-15T18:50:32+01:00)
-    14: Michael Tye on Pain (2012-08-31T20:51:01+01:00)
-    15: Daniel Dennett on Free Will Worth Wanting (2012-08-18T08:58:24+01:00)
-    16: Pat Churchland on What Neuroscience Can Teach Us About Morality (2012-08-03T22:52:12+01:00)
-    17: Rae Langton on Hate Speech (2012-07-28T20:14:27+01:00)
-    18: Molly Crockett on Brain Chemistry and Moral-Decision Making (originally on Bioethics Bites) (2012-07-22T21:14:35+01:00)
-    19: Huw Price on Backward Causation (2012-07-15T19:06:15+01:00)
 
+    0: Tom Sorell on Surveillance (2013-01-25T13:43:46+00:00)
+    1: John Campbell on Schizophrenia (2013-01-08T12:41:27+00:00)
+    2: Kendall Walton on Photography (2012-12-23T12:33:09+00:00)
+    3: Twitter Competition: Who's Your Favourite Philosopher? (2012-12-11T07:24:51+00:00)
+    4: Alan Ryan on Freedom and Its History (2012-12-08T11:16:45+00:00)
+    5: Nigel Warburton at Blackwell's Bookshop, Oxford 7pm Wed. Dec. 5th (2012-12-01T11:19:09+00:00)
+    6: Who's Your Favourite Philosopher? (2012-11-30T18:33:56+00:00)
+    7: Peter Adamson on Avicenna's Flying Man Thought Experiment (2012-11-26T15:57:18+00:00)
+    8: Links to Past Episodes (2012-12-01T11:53:03+00:00)
+    9: Tim Bayne on the Unity of  Consciousness (2012-11-11T22:20:17+00:00)
+    10: Galen Strawson on the Sense of Self (2012-05-05T12:56:05+01:00)
+    11: Liane Young on Mind and Morality (2012-10-27T12:39:22+01:00)
+    12: Gary L. Francione on Animal Abolitionism (2012-10-13T13:48:32+01:00)
+    13: Richard Sorabji on Mahatma Gandhi as Philosopher (2012-09-28T13:18:08+01:00)
+    14: Tim Crane on Non-Existence (2012-09-15T18:50:32+01:00)
+    15: Michael Tye on Pain (2012-08-31T20:51:01+01:00)
+    16: Daniel Dennett on Free Will Worth Wanting (2012-08-18T08:58:24+01:00)
+    17: Pat Churchland on What Neuroscience Can Teach Us About Morality (2012-08-03T22:52:12+01:00)
+    18: Rae Langton on Hate Speech (2012-07-28T20:14:27+01:00)
+    19: Molly Crockett on Brain Chemistry and Moral-Decision Making (originally on Bioethics Bites) (2012-07-22T21:14:35+01:00)
 
 Interesting stuff. We'll download a couple of episodes, just to make sure that it's really worth it:
 
@@ -47,7 +47,9 @@ Interesting stuff. We'll download a couple of episodes, just to make sure that i
 
 and Greg says
 
-    Downloading Kendall Walton on Photography -- Kendall_Walton_on_Photography.mp3
+    Downloading John Campbell on Schizophrenia -- John_Campbell_on_Schizophrenia.mp3
+    Done
+    Downloading John Campbell on Schizophrenia -- John_Campbell_on_Berkeleys_Puzzle_1.mp3
     Done
     Downloading Who's Your Favourite Philosopher? -- Whos_Your_Favourite_Philosopher_.mp3
     Done
@@ -58,11 +60,9 @@ and Greg says
     Downloading Peter Adamson on Avicenna's Flying Man Thought Experiment -- Peter_Adamson_on_Plotinus_on_Evil.mp3
     Done
 
-(in case you are wondering, there is nothing in entry 7 to download.)
+As you can see, `greg download` accepts a range of episodes of the kind `a, b, c-f, h, ...`. The numbers make reference to the numbers at the beginning of each entry provided by `greg check`. `check` creates a persistent file (`feeddump` in the data directory, `~/.local/share/greg/data by default, but you can change that in the config file, or passing a different path with the `--datadirectory` flag), so `download` will keep on working, and referring to the last `check` ever done.
 
-As you can see, `greg download` accepts a range of episodes of the kind `a, b, c-f, h, ...`. The numbers make reference to the numbers at the beginning of each entry provided by `greg check`. `check` creates a persistent file (`~/.local/share/greg/data/feeddump`), so `download` will keep on working, and referring to the last `check` ever done.
-
-All of these podcasts will be downloaded to the download directory (again, `~/Podcasts` by default. We'll learn how to change that soon), inside a subdirectory named after the podcast (we can change that default too.) After listening to them we decide that this podcast is well worth our time, and keep it, or we decide that it's not, and
+All of these podcasts will be downloaded to the default download directory for the feed (if you used the `-f` flag) or the general default download directory (again, `~/Podcasts` if you don't tell Greg otherwise. We'll learn how to change that soon), inside a subdirectory named after the podcast (we can change that default too.) After listening to them we decide that this podcast is well worth our time, and keep it, or we decide that it's not, and
 
     greg remove PhilosophyBites
 
@@ -70,7 +70,7 @@ If we keep it, we might want to start sync'ing from, say, the 1st of November, 2
 
     greg edit PhilosophyBites -d 01/11/12
 
-`-d` or `--downloadfrom` change the date after which Greg should start downloading episodes when it syncs. Currently, the only two things one can `edit` in a feed are the download-from date and `--url`. `greg edit -h` will give help you with the `edit` options and syntax -- likewise for the rest of Greg subcommands.
+`-d` or `--downloadfrom` change the date after which Greg should start downloading episodes when it syncs. Currently, the only two things one can `edit` in a feed are the download-from date and `--url` -- but many more things can be changed by editing the config file. `greg edit -h` will give help you with the `edit` options and syntax -- likewise for the rest of Greg subcommands.
 
 All right. Let's add a second feed:
 
@@ -91,7 +91,7 @@ which returns
     -------
         url: http://feeds.feedburner.com/historyofphilosophy?format=xml
 
-Let us add a final feed:
+Let us add another feed:
 
     greg add MusicaAntigua http://www.rtve.es/api/programas/23353/audios.rss
 
@@ -105,4 +105,24 @@ and add a section for MusicaAntigua:
 
     Tag = yes
 
-In `greg.conf` you can also change the download directory, and some other things. It should be self-explanatory.
+Finally, let us add a video podcast
+
+    greg add TEDTalks http://feeds.feedburner.com/TEDTalks_video
+
+By default, Greg only donwloads audio files (in fact, files that have "audio" as part of their type). In order to download the right file in TEDTalks, then, you need to change that in the config file. Again, add a section:
+
+    [TEDTalks]
+
+    mime = video
+
+You could also have a couple of types there, as in `mime = audio, video`; or any other type, `mime = torrent`, or whatever.
+
+Another useful thing that you can change in the config file is the download handler; Greg by default uses `urllib.request.urlretrieve`, but you can use whatever you want. I, for example, have
+
+    downloadhandler = wget {link} -P {directory}
+
+in my local `greg.conf`. You can do all sorts of nice things with this. For example, when `check`ing a podcast, you don't need to download it, but maybe just stream it, like this:
+
+    greg download 0 --downloadhandler "mplayer {link}"
+
+For information about the {placeholders}, take a look at [greg.conf](https://github.com/manolomartinez/greg/blob/master/data/greg.conf). In `greg.conf` you can also change the download directory, and some other things. It should be self-explanatory.
