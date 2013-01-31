@@ -482,6 +482,7 @@ def download(args):
         for enclosure in entry.enclosures:
             if any([mimetype in enclosure["type"] for mimetype in mime]): 
                 downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
+        downloadlinks = list(set(downloadlinks)) # Removes dupes
         for podname in downloadlinks:
             try:
                 print ("Downloading {} -- {}".format(entry.title, podname))
