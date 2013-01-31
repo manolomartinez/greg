@@ -400,6 +400,7 @@ def sync(args):
                     # We will download all enclosures of the desired mime-type
                     if any([mimetype in enclosure["type"] for mimetype in mime]): 
                         downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
+                    downloadlinks = list(set(downloadlinks)) # remove dupes
                 for podname in downloadlinks: 
                     if podname not in entrylinks:
                         if linkdate > currentdate and entrycounter < stop:
