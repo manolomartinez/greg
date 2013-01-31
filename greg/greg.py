@@ -165,6 +165,7 @@ def check_directory(args, feed, podcast): # Find out, and create if needed, the 
         except:
             print("You want me to use the feed title to name the directory in which this podcast is saved, but this feed apparently has no title. I will use the name you gave me for it.", file = sys.stderr, flush = True)
             directory = os.path.join(DOWNLOAD_PATH, feed)
+            print(directory)
     elif subdirectory == "name":
         if feed != 'DEFAULT':
             directory = os.path.join(DOWNLOAD_PATH, feed)
@@ -220,8 +221,9 @@ def download_handler(args, feed, link, filename, directory, fullpath, title):
             fullpath = fullpath + '_'
         urlretrieve(link, fullpath)
     else:
+        import shlex
         instruction = value.format(link = link, filename = filename, directory = directory, fullpath = fullpath, title = title)
-        instructionlist = instruction.split(sep = " ")
+        instructionlist = shlex.split(instruction)
         subprocess.call(instructionlist)
 
 
