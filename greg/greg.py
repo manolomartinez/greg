@@ -222,7 +222,9 @@ def download_handler(args, feed, link, filename, directory, fullpath, title):
         urlretrieve(link, fullpath)
     else:
         import shlex
-        instruction = value.format(link = link, filename = filename, directory = directory, fullpath = fullpath, title = title)
+        instruction = value.format(link = link, filename = filename, directory
+                = shlex.quote(directory), fullpath = fullpath, title =
+                shlex.quote(title))
         instructionlist = shlex.split(instruction)
         subprocess.call(instructionlist)
 
