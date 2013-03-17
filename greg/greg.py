@@ -30,7 +30,175 @@ try: # Stagger is an optional dependency
 except ImportError:
     staggerexists = False
 
-CONFIG_FILENAME_GLOBAL = '/etc/greg.conf'
+
+config_filename_global = '/etc/greg.conf'
+
+class Session():
+    def __init__(self, args):
+        self.args = args
+        self.config_filename_user = self.retrieve_config_file()
+        self.data_dir = self.retrieve_data_directory()
+        self.data_filename =  os.path.join(self.data_dir, "data")
+        self.feeds = configparser.ConfigParser()
+        self.feeds.read(self.data_filename)
+
+    def list_feeds(self): # Outputs a list of all feed names
+        feedslist = []
+        feeds = configparser.ConfigParser()
+        feeds.read(self.data_filename)
+        return feeds.sections()
+
+    def retrieve_config_file(self): 
+        try:
+            if self.args["configfile"]:
+                return self.args["configfile"]
+        except KeyError:
+            pass
+        return os.path.expanduser('~/.config/greg/greg.conf')
+
+    def retrieve_data_directory(self): # Retrieves the data directory (looks first into config_filename_global
+        # then into config_filename_user. The latest takes preeminence)
+        args = self.args
+        try:
+            if args['datadirectory']:
+                ensure_dir(args['datadirectory'])
+                return args['datadirectory']
+        except KeyError:
+            pass
+        config = configparser.ConfigParser()
+        config.read([config_filename_global, self.config_filename_user])
+        section = config.default_section
+        data_path = config.get(section, 'Data directory', fallback='~/.local/share/greg')
+        data_path_expanded = os.path.expanduser(data_path)
+        ensure_dir(data_path_expanded)
+        return os.path.expanduser(data_path_expanded)   
+
+class Feed():
+    def __init__(self, session, feed):
+        self.session = session
+        self.args = session.args
+        self.name = feed
+        self.podcast = feedparser.parse(session.feeds[feed]["url"])
+        self.directory = self.check_directory()
+        self.sync_by_date = self.has_date()
+        self.willtag = self.will_tag()
+        self.mime = self.retrieve_mime()
+        try:
+            self.wentwrong = "URLError" in str(self.podcast["bozo_exception"])
+        except KeyError:
+            self.wentwrong = False
+        self.info = os.path.join(session.data_dir, feed)
+        self.entrylinks, self.linkdates = parse_feed_info(self.info)
+
+    def retrieve_config(self, value, default): # Retrieves a value (with a certain fallback) from the config files
+        # (looks first into config_filename_global
+        # then into config_filename_user. The latest takes preeminence)
+        # if the command line flag for the value is use, that overrides everything else
+        args = self.args
+        name = self.name
+        config_filename_user = self.session.config_filename_user
+        try:
+            if args[value]:
+                return args[value]
+        except KeyError:
+            pass
+        config = configparser.ConfigParser()
+        config.read([config_filename_global, config_filename_user])
+        section = name if config.has_section(name) else config.default_section
+        answer = config.get(section,value, fallback=default)
+        return answer
+
+    def retrieve_download_path(self): # Retrieves the download path (looks first into config_filename_global
+        # then into the [DEFAULT], then the [feed], section of config_filename_user. The latest takes preeminence)
+        config = configparser.ConfigParser()
+        config.read([config_filename_global, self.session.config_filename_user])
+        section = self.name if config.has_section(self.name) else config.default_section
+        download_path = config.get(section, 'Download directory', fallback='~/Podcasts')
+        subdirectory = config.get(section, 'Create subdirectories', fallback='no')
+        return [os.path.expanduser(download_path), subdirectory]   
+    
+    def check_directory(self): # Find out, and create if needed, the directory in which the feed will be downloaded
+        args = self.args
+        podcast = self.podcast
+        name = self.name
+        try:
+            if args["downloaddirectory"]:
+                ensure_dir(args["downloaddirectory"])
+                return args["downloaddirectory"]
+        except KeyError:
+            pass
+        download_path = self.retrieve_download_path()[0]
+        subdirectory = self.retrieve_download_path()[1]
+        if subdirectory == "title":
+            try:
+                directory = os.path.join(download_path, podcast.feed.title)
+            except:
+                print("You want me to use the feed title to name the directory in which this podcast is saved, but this feed apparently has no title. I will use the name you gave me for it.", file = sys.stderr, flush = True)
+                directory = os.path.join(download_path, name)
+        elif subdirectory == "name":
+            if name != 'DEFAULT':
+                directory = os.path.join(download_path, name)
+            else:
+                directory = download_path
+        else:
+            directory = download_path
+        ensure_dir(directory)
+        return directory
+
+    def has_date(self):
+        podcast = self.podcast
+        session = self.session
+        name = self.name
+        try: # If the feed has a date, and we can parse it, we use it.
+            test = podcast.feed.published_parsed
+            sync_by_date = True
+        except AttributeError: 
+            try:
+                test = podcast.feed.updated_parsed
+                sync_by_date = True
+            except AttributeError: # Otherwise, we use download links.
+                print("I cannot parse the time information of this feed. I'll use your current local time instead.", file = sys.stderr, flush = True)
+                sync_by_date = False
+        if not sync_by_date:
+            session.feeds[name]["date_info"] = "not available"
+            with open(session.data_filename, 'w') as configfile:
+                session.feeds.write(configfile)
+        else:
+            session.feeds[name]["date_info"] = "available"
+            with open(session.data_filename, 'w') as configfile:
+                session.feeds.write(configfile)
+        return sync_by_date
+
+    def will_tag(self): # Checks whether the feed should be tagged 
+        wanttags = self.retrieve_config('Tag', 'no')
+        if wanttags == 'yes':
+            if staggerexists:
+                willtag = True
+            else:
+                willtag = False
+                print("You want me to tag {0}, but you have not installed the Stagger module. I cannot honour your request.".format(feed), file = sys.stderr, flush=True)
+        else:
+            willtag = False
+        return willtag
+
+    def how_many(self): # Where to start downloading, and how many.
+        if self.linkdates != []:
+            currentdate = max(self.linkdates)
+            stop = 10^6
+        else:
+            currentdate = [1,1,1,0,0]
+            firstsync = self.retrieve_config('firstsync', '1')
+            if firstsync == 'all':
+                stop = 10^6 # I'm guessing no feed in the world will have more than a million entries 
+            else:
+                stop = int(firstsync)
+        return currentdate, stop
+
+    def retrieve_mime(self): # Checks the mime-type to download
+        mime = self.retrieve_config('mime', 'audio')
+        mimedict = {"number":mime} # the input that parse_for_download expects
+        return parse_for_download(mimedict)
+
 
 # Registering a custom date handler for feedparser
 
@@ -71,127 +239,24 @@ def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a lis
             list_of_feeds = list_of_feeds + [str(x) for x in range (eval(extremes[0]),eval(extremes[1])+1)]
     return list_of_feeds
 
-def retrieve_config_file(args): 
+
+def tag(feed, entry, podname): # Tags the file at podpath with the information in podcast and entry
+    podpath = os.path.join(feed.directory, podname)
     try:
-        if args["configfile"]:
-            return args["configfile"]
-    except KeyError:
-        pass
-    return os.path.expanduser('~/.config/greg/greg.conf')
-
-def retrieve_config(args, feed, value, default): # Retrieves a value (with a certain fallback) from the config files
-    # (looks first into CONFIG_FILENAME_GLOBAL
-    # then into CONFIG_FILENAME_USER. The latest takes preeminence)
-    # if the command line flag for the value is use, that overrides everything else
-    CONFIG_FILENAME_USER = retrieve_config_file(args)
-    try:
-        if args[value]:
-            return args[value]
-    except KeyError:
-        pass
-    config = configparser.ConfigParser()
-    config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
-    section = feed if config.has_section(feed) else config.default_section
-    answer = config.get(section,value, fallback=default)
-    return answer
-
-def retrieve_data_directory(args): # Retrieves the data directory (looks first into CONFIG_FILENAME_GLOBAL
-    # then into CONFIG_FILENAME_USER. The latest takes preeminence)
-    try:
-        if args['datadirectory']:
-            ensure_dir(args['datadirectory'])
-            return args['datadirectory']
-    except KeyError:
-        pass
-    CONFIG_FILENAME_USER = retrieve_config_file(args)
-    config = configparser.ConfigParser()
-    config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
-    section = config.default_section
-    data_path = config.get(section, 'Data directory', fallback='~/.local/share/greg')
-    data_path_expanded = os.path.expanduser(data_path)
-    ensure_dir(data_path_expanded)
-    return os.path.expanduser(data_path_expanded)   
-        
-def retrieve_download_path(args, feed): # Retrieves the download path (looks first into CONFIG_FILENAME_GLOBAL
-    # then into the [DEFAULT], then the [feed], section of CONFIG_FILENAME_USER. The latest takes preeminence)
-    CONFIG_FILENAME_USER = retrieve_config_file(args)
-    config = configparser.ConfigParser()
-    config.read([CONFIG_FILENAME_GLOBAL, CONFIG_FILENAME_USER])
-    section = feed if config.has_section(feed) else config.default_section
-    download_path = config.get(section, 'Download directory', fallback='~/Podcasts')
-    subdirectory = config.get(section, 'Create subdirectories', fallback='no')
-    return [os.path.expanduser(download_path), subdirectory]   
-
-def will_tag(args, feed): # Checks whether the feed should be tagged 
-    wanttags = retrieve_config(args, feed, 'Tag', 'no')
-    if wanttags == 'yes':
-        if staggerexists:
-            willtag = True
-        else:
-            willtag = False
-            print("You want me to tag {0}, but you have not installed the Stagger module. I cannot honour your request.".format(feed), file = sys.stderr, flush=True)
-    else:
-        willtag = False
-    return willtag
-
-def retrieve_mime(args, feed): # Checks the mime-type to download
-    mime = retrieve_config(args, feed, 'mime', 'audio')
-    mimedict = {"number":mime} # the input that parse_for_download expects
-    return parse_for_download(mimedict)
-
-def tag(feed, entry, podcast, podpath): # Tags the file at podpath with the information in podcast and entry
-    try:
-        stagger.util.set_frames(podpath, {"artist":podcast.feed.title})
+        stagger.util.set_frames(podpath, {"artist":feed.podcast.name.title})
     except:
-        stagger.util.set_frames(podpath, {"artist":feed})
+        stagger.util.set_frames(podpath, {"artist":feed.name})
     try:
         stagger.util.set_frames(podpath, {"title":entry.title})
     except:
         stagger.util.set_frames(podpath, {"title":entry.link})
     stagger.util.set_frames(podpath, {"genre":"Podcast"})
 
-def check_directory(args, feed, podcast): # Find out, and create if needed, the directory in which the feed will be downloaded
-    try:
-        if args["downloaddirectory"]:
-            ensure_dir(args["downloaddirectory"])
-            return args["downloaddirectory"]
-    except KeyError:
-        pass
-    DOWNLOAD_PATH = retrieve_download_path(args, feed)[0]
-    subdirectory = retrieve_download_path(args, feed)[1]
-    if subdirectory == "title":
-        try:
-            directory = os.path.join(DOWNLOAD_PATH, podcast.feed.title)
-        except:
-            print("You want me to use the feed title to name the directory in which this podcast is saved, but this feed apparently has no title. I will use the name you gave me for it.", file = sys.stderr, flush = True)
-            directory = os.path.join(DOWNLOAD_PATH, feed)
-            print(directory)
-    elif subdirectory == "name":
-        if feed != 'DEFAULT':
-            directory = os.path.join(DOWNLOAD_PATH, feed)
-        else:
-            directory = DOWNLOAD_PATH
-    else:
-        directory = DOWNLOAD_PATH
-    ensure_dir(directory)
-    return directory
 
 def get_date(line):
     date = eval(line.split(sep=' ', maxsplit = 1)[1])
     return date
 
-def has_date(podcast):
-    try: # If the feed has a date, and we can parse it, we use it.
-        test = podcast.feed.published_parsed
-        sync_by_date = True
-    except AttributeError: 
-        try:
-            test = podcast.feed.updated_parsed
-            sync_by_date = True
-        except AttributeError: # Otherwise, we use download links.
-            print("I cannot parse the time information of this feed. I'll use your current local time instead.", file = sys.stderr, flush = True)
-            sync_by_date = False
-    return sync_by_date
 
 def transition(args, feed, feeds): # A function to ease the transition to individual feed files
     if "downloadfrom" in feeds[feed]:
@@ -202,20 +267,13 @@ def transition(args, feed, feeds): # A function to ease the transition to indivi
         with open(DATA_FILENAME, 'w') as configfile:
             feeds.write(configfile)
 
-def parse_feed_info(FEED_INFO):
-    entrylinks = []
-    linkdates = []
-    try:
-        with open(FEED_INFO, 'r') as previous:
-            for line in previous:
-                entrylinks.append(line.split(sep=' ')[0]) # This is the list of already downloaded entry links
-                linkdates.append(eval(line.split(sep=' ', maxsplit = 1)[1])) # This is the list of already downloaded entry dates
-    except FileNotFoundError:
-        pass
-    return entrylinks, linkdates
 
-def download_handler(args, feed, link, filename, directory, fullpath, title):
-    value = retrieve_config(args, feed, 'downloadhandler', 'greg')
+def download_handler(feed, link, filename, title):
+    args = feed.args
+    name = feed.name
+    directory = feed.directory
+    fullpath = os.path.join(directory, filename)
+    value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
         while os.path.isfile(fullpath):
             fullpath = fullpath + '_'
@@ -228,14 +286,23 @@ def download_handler(args, feed, link, filename, directory, fullpath, title):
         instructionlist = shlex.split(instruction)
         subprocess.call(instructionlist)
 
+def parse_feed_info(info):
+    entrylinks = []
+    linkdates = []
+    try:
+        with open(info, 'r') as previous:
+            for line in previous:
+                entrylinks.append(line.split(sep=' ')[0]) # This is the list of already downloaded entry links
+                linkdates.append(eval(line.split(sep=' ', maxsplit = 1)[1])) # This is the list of already downloaded entry dates
+    except FileNotFoundError:
+        pass
+    return entrylinks, linkdates
 
 # The following are the functions that correspond to the different commands
 
 def add(args): # Adds a new feed
-    DATA_FILENAME =  os.path.join(retrieve_data_directory(args), "data")
-    config = configparser.ConfigParser()
-    config.read(DATA_FILENAME)
-    if args["name"] in config.sections():
+    session = Session(args)
+    if args["name"] in session.feeds.sections():
         sys.exit("You already have a feed with that name.")
     if args["name"] in ["all", "DEFAULT"]:
         sys.exit("greg uses ""{}"" for a special purpose. Please choose another name for your feed.".format(args["name"]))
@@ -243,156 +310,109 @@ def add(args): # Adds a new feed
     for key,value in args.items():
         if value != None and key != "func" and key != "name":
             entry[key] = value
-    config[args["name"]] = entry
-    with open(DATA_FILENAME, 'w') as configfile:
-        config.write(configfile)
+    session.feeds[args["name"]] = entry
+    with open(session.data_filename, 'w') as configfile:
+        session.feeds.write(configfile)
 
 def edit(args): # Edits the information associated with a certain feed
-    DATA_DIR = retrieve_data_directory(args)
-    DATA_FILENAME =  os.path.join(DATA_DIR, "data")
-    FEED_INFO =  os.path.join(DATA_DIR, args["name"])
-    feeds = configparser.ConfigParser()
-    feeds.read(DATA_FILENAME)
-    if not(args["name"] in feeds):
+    session = Session(args)
+    feed_info =  os.path.join(session.data_dir, args["name"])
+    if not(args["name"] in session.feeds):
         sys.exit("You don't have a feed with that name.")
     for key,value in args.items():
         if value != None and key == "url":
-            feeds[args["name"]][key] = str(value)
-            with open(DATA_FILENAME, 'w') as configfile:
-                feeds.write(configfile)
+            session.feeds[args["name"]][key] = str(value)
+            with open(session.data_filename, 'w') as configfile:
+                session.feeds.write(configfile)
         if value != None and key == "downloadfrom":
             try:
-                dateinfo = (feeds[args["name"]]["date_info"] == "not available")
+                dateinfo = (session.feeds[args["name"]]["date_info"] == "not available")
             except KeyError:
-                feeds[args["name"]]["date_info"] = "available" # provisionally!
-                with open(DATA_FILENAME, 'w') as configfile:
-                    feeds.write(configfile)
+                session.feeds[args["name"]]["date_info"] = "available" # provisionally!
+                with open(session.data_filename, 'w') as configfile:
+                    session.feeds.write(configfile)
                 dateinfo = False #provisionally
             if dateinfo:
                 print("{} has no date information that I can use. Using --downloadfrom might not have the results that you expect.".format(args["name"]), file = sys.stderr, flush = True)
             line =' '.join(["currentdate", str(value), "\n"]) # A dummy entry with the right date, in case we need it.
             try:
                 # Remove from the feed file all entries after or equal to downloadfrom
-                with open(FEED_INFO, 'r') as previous:
+                with open(feed_info, 'r') as previous:
                     current = list(filterfalse(lambda line: value < get_date(line), previous))
                     if current == [] and dateinfo:
                         current = [line]
-                with open(FEED_INFO, 'w') as currentfile:
+                with open(feed_info, 'w') as currentfile:
                     currentfile.writelines(current)
             except FileNotFoundError:
                 # Write the file with a dummy entry with the right date
-                with open(FEED_INFO, 'w') as currentfile:
+                with open(feed_info, 'w') as currentfile:
                     currentfile.write(line)
 
 def remove(args): # Removes a certain feed
-    DATA_DIR = retrieve_data_directory(args)
-    DATA_FILENAME =  os.path.join(DATA_DIR, "data")
-    FEED_INFO =  os.path.join(DATA_DIR, args["name"])
-    feeds = configparser.ConfigParser()
-    feeds.read(DATA_FILENAME)
-    if not(args["name"] in feeds):
+    session = Session(args)
+    if not(args["name"] in session.feeds):
         sys.exit("You don't have a feed with that name.")
     inputtext = "Are you sure you want to remove the {} feed? (y/N) ".format(args["name"])
     reply = input(inputtext)
     if reply != "y" and reply != "Y": 
         return 0
     else:
-        feeds.remove_section(args["name"])
-        with open(DATA_FILENAME, 'w') as configfile:
-            feeds.write(configfile)
+        session.feeds.remove_section(args["name"])
+        with open(session.data_filename, 'w') as configfile:
+            session.feeds.write(configfile)
         try:
-            os.remove(os.path.join(DATA_DIR, args["name"]))
+            os.remove(os.path.join(session.data_dir, args["name"]))
         except FileNotFoundError:
             pass
 
 def info(args): # Provides information of a number of feeds
+    session = Session(args)
     if "all" in args["names"]:
-        feeds = list_feeds(args)
+        feeds = session.list_feeds()
     else:
         feeds = args["names"]
     for feed in feeds:
-        pretty_print(args, feed)
+        pretty_print(session, feed)
 
-def pretty_print(args, feed): # Prints the dictionary entry of a feed in a nice way.
+def pretty_print(session, feed): # Prints the dictionary entry of a feed in a nice way.
     print ()
-    DATA_DIR = retrieve_data_directory(args)
-    FEED_INFO =  os.path.join(DATA_DIR, feed)
-    DATA_FILENAME =  os.path.join(DATA_DIR, "data")
-    feeds = configparser.ConfigParser()
-    feeds.read(DATA_FILENAME)
-    entrylinks, linkdates = parse_feed_info(FEED_INFO)
+    feed_info =  os.path.join(session.data_dir, feed)
+    entrylinks, linkdates = parse_feed_info(feed_info)
     print (feed)
     print ("-"*len(feed))
-    print (''.join(["    url: " , feeds[feed]["url"]]))
+    print (''.join(["    url: " , session.feeds[feed]["url"]]))
     if linkdates != []:
         print (''.join(["    Next sync will download from: ", time.strftime("%d %b %Y %H:%M:%S", tuple(max(linkdates))),"."]))
 
 def list_for_user(args):
-    for feed in list_feeds(args):
+    session = Session(args)
+    for feed in session.list_feeds():
         print (feed, end=" ")
     print ()
 
-def list_feeds(args): # Outputs a list of all feed names
-    feedslist = []
-    DATA_FILENAME =  os.path.join(retrieve_data_directory(args), "data")
-    feeds = configparser.ConfigParser()
-    feeds.read(DATA_FILENAME)
-    return feeds.sections()
-
 def sync(args):
-    DATA_DIR = retrieve_data_directory(args)
-    DATA_FILENAME =  os.path.join(DATA_DIR, "data")
-    feeds = configparser.ConfigParser()
-    feeds.read(DATA_FILENAME)
+    session = Session(args)
     if "all" in args["names"]:
-        targetfeeds = list_feeds(args)
+        targetfeeds = session.list_feeds()
     else:
         targetfeeds = []
         for name in args["names"]:
-            if name not in feeds:
+            if name not in session.feeds:
                 print("You don't have a feed called {}.".format(name), file = sys.stderr, flush = True)
             else:
                 targetfeeds.append(name)
-    for feed in targetfeeds:
-        transition(args, feed, feeds)
-        podcast = feedparser.parse(feeds[feed]["url"])
-        directory = check_directory(args, feed, podcast)
-        willtag = will_tag(args, feed)
-        mime = retrieve_mime(args, feed)
-        try:
-            wentwrong = "URLError" in str(podcast["bozo_exception"])
-        except KeyError:
-            wentwrong = False
-        if not wentwrong:
+    for target in targetfeeds:
+        feed = Feed(session, target)
+        if not feed.wentwrong:
             try:
-                title = podcast.feed.title
+                title = feed.podcast.target.title
             except AttributeError:
-                title = feed
+                title = target
             print ("Checking",title, end = "...\n")
-            sync_by_date = has_date(podcast)
-            if not sync_by_date:
-                feeds[feed]["date_info"] = "not available"
-                with open(DATA_FILENAME, 'w') as configfile:
-                    feeds.write(configfile)
-            else:
-                feeds[feed]["date_info"] = "available"
-                with open(DATA_FILENAME, 'w') as configfile:
-                    feeds.write(configfile)
-            FEED_INFO = os.path.join(DATA_DIR, feed)
-            entrylinks, linkdates = parse_feed_info(FEED_INFO)
-            if linkdates != []:
-                currentdate = max(linkdates)
-                stop = 10^6
-            else:
-                currentdate = [1,1,1,0,0]
-                firstsync = retrieve_config(args, feed, 'firstsync', '1')
-                if firstsync == 'all':
-                    stop = 10^6 # I'm guessing no feed in the world will have more than a million entries 
-                else:
-                    stop = int(firstsync)
+            currentdate, stop = feed.how_many()
             entrycounter = 0
-            for entry in podcast.entries:
-                if sync_by_date:
+            for entry in feed.podcast.entries:
+                if feed.sync_by_date:
                     try:
                         linkdate = list(entry.published_parsed)
                     except AttributeError:
@@ -402,11 +422,11 @@ def sync(args):
                 downloadlinks = []
                 for enclosure in entry.enclosures: 
                     # We will download all enclosures of the desired mime-type
-                    if any([mimetype in enclosure["type"] for mimetype in mime]): 
+                    if any([mimetype in enclosure["type"] for mimetype in feed.mime]): 
                         downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
                     downloadlinks = list(set(downloadlinks)) # remove dupes
                 for podname in downloadlinks: 
-                    if podname not in entrylinks:
+                    if podname not in feed.entrylinks:
                         if linkdate > currentdate and entrycounter < stop:
                             try:
                                 print ("Downloading {} -- {}".format(entry.title, podname))
@@ -415,13 +435,12 @@ def sync(args):
                                 print ("Downloading entry -- {}".format(podname))
                                 title = podname
                             try:
-                                podpath = os.path.join(directory, podname)
-                                download_handler(args, feed, enclosure["href"],podname,directory,podpath, title)
-                                if willtag:
-                                    tag(feed, entry, podcast, podpath)
+                                download_handler(feed, enclosure["href"], podname,title)
+                                if feed.willtag:
+                                    tag(feed, entry, podname)
                             except URLError:
                                 sys.exit ("... something went wrong. Are you sure you are connected to the internet?")
-                        with open(FEED_INFO, 'a') as current: # We write to file this often to ensure that downloaded entries count as downloaded.
+                        with open(feed.info, 'a') as current: # We write to file this often to ensure that downloaded entries count as downloaded.
                             current.write(''.join([podname, ' ', str(linkdate),'\n']))
                 entrycounter += 1
             print ("Done")
@@ -430,15 +449,12 @@ def sync(args):
             print(msg, file = sys.stderr, flush = True)
         
 def check(args):
-    DATA_DIR = retrieve_data_directory(args)
-    DATA_FILENAME =  os.path.join(DATA_DIR, "data")
-    feeds = configparser.ConfigParser()
-    feeds.read(DATA_FILENAME)
+    session = Session(args)
     if str(args["url"]) != 'None':
         url = args["url"]
         name = "DEFAULT"
     else:
-        url = feeds[args["feed"]]["url"]
+        url = session.feeds[args["feed"]]["url"]
         name = args["feed"]
     try:
         podcast = feedparser.parse(url)
@@ -459,7 +475,7 @@ def check(args):
         except:
             print ("", end =")")
         print ()
-    dumpfilename = os.path.join(DATA_DIR, 'feeddump')
+    dumpfilename = os.path.join(session.data_dir, 'feeddump')
     with open(dumpfilename, mode='wb') as dumpfile:
         dump = [name, podcast]
         pickle.dump(dump, dumpfile)
