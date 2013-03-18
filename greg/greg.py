@@ -289,6 +289,31 @@ def download_handler(feed, link, filename, title):
         instructionlist = shlex.split(instruction)
         subprocess.call(instructionlist)
 
+def download_entry(feed, entry):
+    downloadlinks = []
+    for enclosure in entry.enclosures: 
+        # We will download all enclosures of the desired mime-type
+        if any([mimetype in enclosure["type"] for mimetype in feed.mime]): 
+            downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
+        downloadlinks = list(set(downloadlinks)) # remove dupes
+    for podname in downloadlinks: 
+        if podname not in feed.entrylinks:
+            try:
+                print ("Downloading {} -- {}".format(entry.title, podname))
+                title = entry.title
+            except:
+                print ("Downloading entry -- {}".format(podname))
+                title = podname
+            try:
+                download_handler(feed, enclosure["href"], podname,title)
+                if feed.willtag:
+                    tag(feed, entry, podname)
+                if feed.info:
+                    with open(feed.info, 'a') as current: # We write to file this often to ensure that downloaded entries count as downloaded.
+                        current.write(''.join([podname, ' ', str(feed.linkdate),'\n']))
+            except URLError:
+                sys.exit ("... something went wrong. Are you sure you are connected to the internet?")
+
 def parse_feed_info(info):
     entrylinks = []
     linkdates = []
@@ -417,34 +442,13 @@ def sync(args):
             for entry in feed.podcast.entries:
                 if feed.sync_by_date:
                     try:
-                        linkdate = list(entry.published_parsed)
+                        feed.linkdate = list(entry.published_parsed)
                     except AttributeError:
-                        linkdate = list(entry.updated_parsed)
+                        feed.linkdate = list(entry.updated_parsed)
                 else:
-                    linkdate = list(time.localtime())
-                downloadlinks = []
-                for enclosure in entry.enclosures: 
-                    # We will download all enclosures of the desired mime-type
-                    if any([mimetype in enclosure["type"] for mimetype in feed.mime]): 
-                        downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
-                    downloadlinks = list(set(downloadlinks)) # remove dupes
-                for podname in downloadlinks: 
-                    if podname not in feed.entrylinks:
-                        if linkdate > currentdate and entrycounter < stop:
-                            try:
-                                print ("Downloading {} -- {}".format(entry.title, podname))
-                                title = entry.title
-                            except:
-                                print ("Downloading entry -- {}".format(podname))
-                                title = podname
-                            try:
-                                download_handler(feed, enclosure["href"], podname,title)
-                                if feed.willtag:
-                                    tag(feed, entry, podname)
-                            except URLError:
-                                sys.exit ("... something went wrong. Are you sure you are connected to the internet?")
-                        with open(feed.info, 'a') as current: # We write to file this often to ensure that downloaded entries count as downloaded.
-                            current.write(''.join([podname, ' ', str(linkdate),'\n']))
+                    feed.linkdate = list(time.localtime())
+                if feed.linkdate > currentdate and entrycounter < stop:
+                    download_entry(feed, entry)
                 entrycounter += 1
             print ("Done")
         else:
@@ -497,25 +501,9 @@ def download(args):
         sys.exit("... something went wrong. Are you sure your last check went well?")
     for number in issues:
         entry = dump[1].entries[eval(number)]
-        downloadlinks = []
-        for enclosure in entry.enclosures:
-            if any([mimetype in enclosure["type"] for mimetype in feed.mime]): 
-                downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
-        downloadlinks = list(set(downloadlinks)) # Removes dupes
-        for podname in downloadlinks:
-            try:
-                print ("Downloading {} -- {}".format(entry.title, podname))
-                title = entry.title
-            except:
-                print("Downloading entry -- {}".format(podname))
-                title = podname
-            try:
-                download_handler(feed, enclosure["href"], podname, title)
-                if feed.willtag:
-                    tag(feed, entry, podname)
-                print("Done")
-            except URLError:
-                sys.exit("... something went wrong. Are you sure you are connected to the internet?")
+        feed.info = []
+        feed.entrylinks = []
+        download_entry(feed, entry)
 
 
 
