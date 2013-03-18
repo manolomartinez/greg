@@ -74,11 +74,14 @@ class Session():
         return os.path.expanduser(data_path_expanded)   
 
 class Feed():
-    def __init__(self, session, feed):
+    def __init__(self, session, feed, podcast):
         self.session = session
         self.args = session.args
         self.name = feed
-        self.podcast = feedparser.parse(session.feeds[feed]["url"])
+        if not podcast:
+            self.podcast = feedparser.parse(session.feeds[feed]["url"])
+        else:
+            self.podcast = podcast
         self.directory = self.check_directory()
         self.sync_by_date = self.has_date()
         self.willtag = self.will_tag()
@@ -402,7 +405,7 @@ def sync(args):
             else:
                 targetfeeds.append(name)
     for target in targetfeeds:
-        feed = Feed(session, target)
+        feed = Feed(session, target, None)
         if not feed.wentwrong:
             try:
                 title = feed.podcast.target.title
@@ -481,26 +484,22 @@ def check(args):
         pickle.dump(dump, dumpfile)
 
 def download(args):
+    session = Session(args)
     issues = parse_for_download(args)
-    DATA_DIRECTORY = retrieve_data_directory(args)
-    dumpfilename = os.path.join(DATA_DIRECTORY, 'feeddump')
+    dumpfilename = os.path.join(session.data_dir, 'feeddump')
     if not(os.path.isfile(dumpfilename)):
         sys.exit("You need to run ""greg check <feed>"" before using ""greg download"".")
     with open(dumpfilename, mode='rb') as dumpfile:
         dump = pickle.load(dumpfile)
     try:
-        mime = retrieve_mime(args, dump[0])
-        if args["mime"]:
-            mime = [args["mime"]]
+        feed = Feed(session, dump[0], dump[1])
     except Exception:
         sys.exit("... something went wrong. Are you sure your last check went well?")
-    directory = check_directory(args, dump[0], dump[1])
-    ensure_dir(directory)
     for number in issues:
         entry = dump[1].entries[eval(number)]
         downloadlinks = []
         for enclosure in entry.enclosures:
-            if any([mimetype in enclosure["type"] for mimetype in mime]): 
+            if any([mimetype in enclosure["type"] for mimetype in feed.mime]): 
                 downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
         downloadlinks = list(set(downloadlinks)) # Removes dupes
         for podname in downloadlinks:
@@ -511,8 +510,9 @@ def download(args):
                 print("Downloading entry -- {}".format(podname))
                 title = podname
             try:
-                podpath = os.path.join(directory, podname)
-                download_handler(args, dump[0], enclosure["href"],podname,directory,podpath, title)
+                download_handler(feed, enclosure["href"], podname, title)
+                if feed.willtag:
+                    tag(feed, entry, podname)
                 print("Done")
             except URLError:
                 sys.exit("... something went wrong. Are you sure you are connected to the internet?")
