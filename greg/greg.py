@@ -263,14 +263,7 @@ def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a lis
 def tag(placeholders): # Tags the file at podpath with the information in podcast and entry
     # We first recover the name of the file to be tagged...
     template = placeholders.feed.retrieve_config("tag_file", "{filename}")
-    filename = template.format(link = placeholders.link, filename =
-                placeholders.filename, directory
-                = shlex.quote(placeholders.directory), fullpath = placeholders.fullpath, title =
-                shlex.quote(placeholders.title), date =
-                placeholders.date_string(), podcasttitle =
-                shlex.quote(placeholders.podcasttitle), name =
-                shlex.quote(placeholders.name))
-
+    filename = substitute_placeholders(template, placeholders)
     podpath = os.path.join(placeholders.directory, filename) # ... this is it
 
     feedoptions = placeholders.feed.session.feeds.options(placeholders.name)
@@ -279,14 +272,7 @@ def tag(placeholders): # Tags the file at podpath with the information in podcas
         in feedoptions if "tag_" in option] # these are the tags to be filled
 
     for tag in tags:
-        metadata  = tag[1].format(link = placeholders.link, filename =
-                placeholders.filename, directory
-                = shlex.quote(placeholders.directory), fullpath = placeholders.fullpath, title =
-                shlex.quote(placeholders.title), date =
-                placeholders.date_string(), podcasttitle =
-                shlex.quote(placeholders.podcasttitle), name =
-                shlex.quote(placeholders.name))
-
+        metadata  = substitute_placeholders(tag[1], placeholders)
         stagger.util.set_frames(podpath, {tag[0]:metadata})
 
 
@@ -315,12 +301,7 @@ def download_handler(feed, placeholders):
         urlretrieve(placeholders.link, placeholders.fullpath)
     else:
         import shlex
-        instruction = value.format(link = placeholders.link, filename =
-                placeholders.filename, directory
-                = shlex.quote(placeholders.directory), fullpath = placeholders.fullpath, title =
-                shlex.quote(placeholders.title), podcasttitle =
-                shlex.quote(placeholders.podcasttitle), name =
-                shlex.quote(placeholders.name))
+        instruction = substitute_placeholders(value, placeholders)
         instructionlist = shlex.split(instruction)
         subprocess.call(instructionlist)
 
@@ -362,6 +343,17 @@ def parse_feed_info(info):
     except FileNotFoundError:
         pass
     return entrylinks, linkdates
+
+def substitute_placeholders(string, placeholders):
+    return string.format(link = placeholders.link, filename =
+                placeholders.filename, directory
+                = shlex.quote(placeholders.directory), 
+                fullpath = placeholders.fullpath, title =
+                shlex.quote(placeholders.title), date =
+                placeholders.date_string(), podcasttitle =
+                shlex.quote(placeholders.podcasttitle), name =
+                shlex.quote(placeholders.name))
+
 
 # The following are the functions that correspond to the different commands
 
