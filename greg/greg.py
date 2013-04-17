@@ -202,6 +202,23 @@ class Feed():
         mimedict = {"number":mime} # the input that parse_for_download expects
         return parse_for_download(mimedict)
 
+class Placeholders():
+    def __init__(self, feed, link, filename, title):
+        self.feed = feed
+        self.link = link
+        self.filename = filename
+        self.directory = feed.directory
+        self.fullpath = os.path.join(self.directory, self.filename)
+        self.title = title
+        self.podcasttitle = feed.podcast.title
+        self.name = feed.name
+        self.date = feed.linkdate
+
+    def date_string(self):
+        date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")
+        return time.strftime(date_format, self.date)
+        
+
 
 # Registering a custom date handler for feedparser
 
@@ -243,17 +260,34 @@ def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a lis
     return list_of_feeds
 
 
-def tag(feed, entry, podname): # Tags the file at podpath with the information in podcast and entry
-    podpath = os.path.join(feed.directory, podname)
-    try:
-        stagger.util.set_frames(podpath, {"artist":feed.podcast.name.title})
-    except:
-        stagger.util.set_frames(podpath, {"artist":feed.name})
-    try:
-        stagger.util.set_frames(podpath, {"title":entry.title})
-    except:
-        stagger.util.set_frames(podpath, {"title":entry.link})
-    stagger.util.set_frames(podpath, {"genre":"Podcast"})
+def tag(placeholders): # Tags the file at podpath with the information in podcast and entry
+    # We first recover the name of the file to be tagged...
+    template = placeholders.feed.retrieve_config("tag_file", "{filename}")
+    filename = template.format(link = placeholders.link, filename =
+                placeholders.filename, directory
+                = shlex.quote(placeholders.directory), fullpath = placeholders.fullpath, title =
+                shlex.quote(placeholders.title), date =
+                placeholders.date_string(), podcasttitle =
+                shlex.quote(placeholders.podcasttitle), name =
+                shlex.quote(placeholders.name))
+
+    podpath = os.path.join(placeholders.directory, filename) # ... this is it
+
+    feedoptions = placeholders.feed.session.feeds.options(placeholders.name)
+    tags = [[option.replace("tag_", ""),
+        placeholders.feed.session.feeds[placeholders.name][option]] for option 
+        in feedoptions if "tag_" in option] # these are the tags to be filled
+
+    for tag in tags:
+        metadata  = tag[1].format(link = placeholders.link, filename =
+                placeholders.filename, directory
+                = shlex.quote(placeholders.directory), fullpath = placeholders.fullpath, title =
+                shlex.quote(placeholders.title), date =
+                placeholders.date_string(), podcasttitle =
+                shlex.quote(placeholders.podcasttitle), name =
+                shlex.quote(placeholders.name))
+
+        stagger.util.set_frames(podpath, {tag[0]:metadata})
 
 
 def get_date(line):
@@ -271,31 +305,32 @@ def transition(args, feed, feeds): # A function to ease the transition to indivi
             feeds.write(configfile)
 
 
-def download_handler(feed, link, filename, title):
+def download_handler(feed, placeholders):
     args = feed.args
     name = feed.name
-    directory = feed.directory
-    fullpath = os.path.join(directory, filename)
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
-        while os.path.isfile(fullpath):
-            fullpath = fullpath + '_'
-        urlretrieve(link, fullpath)
+        while os.path.isfile(placeholders.fullpath):
+            placeholders.fullpath = placeholders.fullpath + '_'
+        urlretrieve(placeholders.link, placeholders.fullpath)
     else:
         import shlex
-        instruction = value.format(link = link, filename = filename, directory
-                = shlex.quote(directory), fullpath = fullpath, title =
-                shlex.quote(title))
+        instruction = value.format(link = placeholders.link, filename =
+                placeholders.filename, directory
+                = shlex.quote(placeholders.directory), fullpath = placeholders.fullpath, title =
+                shlex.quote(placeholders.title), podcasttitle =
+                shlex.quote(placeholders.podcasttitle), name =
+                shlex.quote(placeholders.name))
         instructionlist = shlex.split(instruction)
         subprocess.call(instructionlist)
 
 def download_entry(feed, entry):
-    downloadlinks = []
+    downloadlinks = {}
     for enclosure in entry.enclosures: 
         # We will download all enclosures of the desired mime-type
         if any([mimetype in enclosure["type"] for mimetype in feed.mime]): 
-            downloadlinks.append(urlparse(enclosure["href"]).path.split("/")[-1]) # preserve the original name
-        downloadlinks = list(set(downloadlinks)) # remove dupes
+            downloadlinks[urlparse(enclosure["href"]). # preserve original name
+                    path.split("/") [-1]] = enclosure["href"] 
     for podname in downloadlinks: 
         if podname not in feed.entrylinks:
             try:
@@ -305,9 +340,11 @@ def download_entry(feed, entry):
                 print ("Downloading entry -- {}".format(podname))
                 title = podname
             try:
-                download_handler(feed, enclosure["href"], podname,title)
+                placeholders  = Placeholders(feed, downloadlinks[podname],
+                        podname,title)
+                download_handler(feed, placeholders)
                 if feed.willtag:
-                    tag(feed, entry, podname)
+                    tag(placeholders)
                 if feed.info:
                     with open(feed.info, 'a') as current: # We write to file this often to ensure that downloaded entries count as downloaded.
                         current.write(''.join([podname, ' ', str(feed.linkdate),'\n']))
