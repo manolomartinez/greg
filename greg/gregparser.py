@@ -23,9 +23,9 @@ import greg.greg
 # defining the from_date type
 def from_date(string):
     try:
-        fd =  list(time.strptime(string, "%d/%m/%y"))
+        fd =  list(time.strptime(string, "%Y-%m-%d"))
     except Exception:
-        msg = "the date should be in the form dd/mm/yy"
+        msg = "the date should be in the form YYYY-MM-DD"
         raise argparse.ArgumentTypeError(msg)
     return fd
 
@@ -47,7 +47,8 @@ subparsers = parser.add_subparsers()
 parser_add = subparsers.add_parser('add', help='adds a new feed')
 parser_add.add_argument('name', help='the name of the new feed')
 parser_add.add_argument('url', type = url, help='the url of the new feed')
-parser_add.add_argument('--downloadfrom', '-d', type=from_date, help='the date from which files should be downloaded (dd/mm/yy)')
+parser_add.add_argument('--downloadfrom', '-d', type=from_date, 
+    help='the date from which files should be downloaded (YYYY-MM-DD)')
 parser_add.set_defaults(func=greg.greg.add)
 
 # create the parser for the "edit" command
@@ -55,7 +56,8 @@ parser_edit = subparsers.add_parser('edit', help='edits a feed')
 parser_edit.add_argument('name', help='the name of the feed to be edited')
 group = parser_edit.add_mutually_exclusive_group(required = True)
 group.add_argument('--url', '-u', type = url, help='the new url of the feed')
-group.add_argument('--downloadfrom', '-d', type=from_date, help='the date from which files should be downloaded [dd/mm/yy]')
+group.add_argument('--downloadfrom', '-d', 
+        type=from_date, help='the date from which files should be downloaded (YYYY-MM-DD)')
 parser_edit.set_defaults(func=greg.greg.edit)
 
 # create the parser for the "info" command
@@ -96,11 +98,13 @@ parser_remove.add_argument('name', help='the name of the feed you want to remove
 parser_remove.set_defaults(func=greg.greg.remove)
 
 def main(): # parse the args and call whatever function was selected
-    try:
-        args = parser.parse_args(sys.argv[1:])
-        args.func(vars(args))
-    except AttributeError as err:
-        if str(err) == "\'Namespace\' object has no attribute \'func\'":
-            parser.print_help()
-        else:
-            print("Something has gone wrong: {}".format(err), file = sys.stderr, flush = True)
+    #try:
+    #    args = parser.parse_args(sys.argv[1:])
+    #    args.func(vars(args))
+    #except AttributeError as err:
+    #    if str(err) == "\'Namespace\' object has no attribute \'func\'":
+    #        parser.print_help()
+    #    else:
+    #        print("Something has gone wrong: {}".format(err), file = sys.stderr, flush = True)
+    args = parser.parse_args(sys.argv[1:])
+    args.func(vars(args))
