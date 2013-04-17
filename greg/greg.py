@@ -16,7 +16,7 @@
 # along with Greg.  If not, see <http://www.gnu.org/licenses/>.
 
 import configparser, os, pickle, subprocess, sys, time, re
-from itertools import islice, filterfalse
+from itertools import filterfalse
 from urllib.request import urlretrieve
 from urllib.parse import urlparse 
 from urllib.error import URLError
