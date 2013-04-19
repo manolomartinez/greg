@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Manolo Martínez <manolo@austrohungaro.com>
+# Copyright (C) 2012, 2013  Manolo Martínez <manolo@austrohungaro.com>
 #
 # This file is part of Greg.
 #
