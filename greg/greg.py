@@ -225,11 +225,9 @@ class Placeholders():
             self.podcasttitle = feed.name
         self.name = feed.name
         self.date = tuple(feed.linkdate)
-        print(self.date)
 
     def date_string(self):
         date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")
-        print(date_format)
         return time.strftime(date_format, self.date)
         
 
