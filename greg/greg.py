@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Greg.  If not, see <http://www.gnu.org/licenses/>.
 
-import configparser, os, pickle, subprocess, sys, time, re
+import configparser, os, pickle, shlex, subprocess, sys, time, re
 from itertools import filterfalse
 from urllib.request import urlretrieve
 from urllib.parse import urlparse 
@@ -41,6 +41,8 @@ class Session():
         self.data_filename =  os.path.join(self.data_dir, "data")
         self.feeds = configparser.ConfigParser()
         self.feeds.read(self.data_filename)
+        self.config = configparser.ConfigParser()
+        self.config.read([config_filename_global, self.config_filename_user])
 
     def list_feeds(self): # Outputs a list of all feed names
         feedslist = []
@@ -77,6 +79,7 @@ class Feed():
     def __init__(self, session, feed, podcast):
         self.session = session
         self.args = session.args
+        self.config = self.session.config
         self.name = feed
         if not podcast:
             self.podcast = feedparser.parse(session.feeds[feed]["url"])
@@ -101,27 +104,20 @@ class Feed():
         # if the command line flag for the value is use, that overrides everything else
         args = self.args
         name = self.name
-        config_filename_user = self.session.config_filename_user
         try:
             if args[value]:
                 return args[value]
         except KeyError:
             pass
-        config = configparser.ConfigParser()
-        config.read([config_filename_global, config_filename_user])
-        section = name if config.has_section(name) else config.default_section
-        answer = config.get(section,value, fallback=default)
+        section = name if self.config.has_section(name) else self.config.default_section
+        answer = self.config.get(section,value, fallback=default)
         return answer
 
     def default_tag_dict(self):
-        config_filename_user = self.session.config_filename_user
-        config = configparser.ConfigParser()
-        config.read([config_filename_global, config_filename_user])
-        default = config.default_section
-        defaultoptions = config.options(default)
+        defaultoptions = self.config.defaults()
         tags = [[option.replace("tag_", ""),
-            config.get(default, option)] for option 
-            in feedoptions if "tag_" in option] # these are the tags to be filled
+            defaultoptions[option]] for option 
+            in defaultoptions if "tag_" in option] # these are the tags to be filled
         return dict(tags)
 
     def retrieve_download_path(self): # Retrieves the download path (looks first into config_filename_global
@@ -224,15 +220,16 @@ class Placeholders():
         self.fullpath = os.path.join(self.directory, self.filename)
         self.title = title
         try:
-            print("We are here")
             self.podcasttitle = feed.podcast.title
         except AttributeError:
-            self.podcastitle = feed.name
+            self.podcasttitle = feed.name
         self.name = feed.name
-        self.date = feed.linkdate
+        self.date = tuple(feed.linkdate)
+        print(self.date)
 
     def date_string(self):
         date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")
+        print(date_format)
         return time.strftime(date_format, self.date)
         
 
@@ -279,23 +276,26 @@ def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a lis
 
 def tag(placeholders): # Tags the file at podpath with the information in podcast and entry
     # We first recover the name of the file to be tagged...
-    template = placeholders.feed.retrieve_config("tag_file", "{filename}")
-    filename = substitute_placeholders(template, placeholders)
+    template = placeholders.feed.retrieve_config("file_to_tag", "{filename}")
+    filename = substitute_placeholders(template, placeholders, "normal")
     podpath = os.path.join(placeholders.directory, filename) # ... and this is it
 
     # now we create a dictionary of tags and values
     tagdict = placeholders.feed.defaulttagdict # these are the defaults
-    feedoptions = placeholders.feed.session.feeds.options(placeholders.name)
+    feedoptions = placeholders.feed.config.options(placeholders.name)
     # this monstruous concatenation of classes... surely a bad idea.
     tags = [[option.replace("tag_", ""),
-        placeholders.feed.session.feeds[placeholders.name][option]] for option 
+        placeholders.feed.config[placeholders.name][option]] for option 
         in feedoptions if "tag_" in option] # these are the tags to be filled
+    if tags == []:
+        tagdict = placeholders.feed.defaulttagdict # these are the defaults
     # Now we combine this list with the default dictionary
-    for tag in tags:
-        tagdict[tag[0]] = tag[1]
-
+    else:
+        for tag in tags:
+            tagdict[tag[0]] = tag[1]
     for tag in tagdict:
-        metadata  = substitute_placeholders(tagdict[tag], placeholders)
+        metadata  = substitute_placeholders(tagdict[tag], placeholders,
+        "normal")
         stagger.util.set_frames(podpath, {tag:metadata})
 
 
@@ -323,8 +323,7 @@ def download_handler(feed, placeholders):
             placeholders.fullpath = placeholders.fullpath + '_'
         urlretrieve(placeholders.link, placeholders.fullpath)
     else:
-        import shlex
-        instruction = substitute_placeholders(value, placeholders)
+        instruction = substitute_placeholders(value, placeholders, "safe")
         instructionlist = shlex.split(instruction)
         subprocess.call(instructionlist)
 
@@ -367,15 +366,25 @@ def parse_feed_info(info):
         pass
     return entrylinks, linkdates
 
-def substitute_placeholders(string, placeholders):
-    return string.format(link = placeholders.link, filename =
-                placeholders.filename, directory
-                = shlex.quote(placeholders.directory), 
-                fullpath = placeholders.fullpath, title =
-                shlex.quote(placeholders.title), date =
-                placeholders.date_string(), podcasttitle =
-                shlex.quote(placeholders.podcasttitle), name =
-                shlex.quote(placeholders.name))
+def substitute_placeholders(string, placeholders, mode):
+    if mode == "safe":
+        return string.format(link = placeholders.link, filename =
+                    placeholders.filename, directory
+                    = shlex.quote(placeholders.directory), 
+                    fullpath = placeholders.fullpath, title =
+                    shlex.quote(placeholders.title), date =
+                    placeholders.date_string(), podcasttitle =
+                    shlex.quote(placeholders.podcasttitle), name =
+                    shlex.quote(placeholders.name))
+    if mode == "normal":
+        return string.format(link = placeholders.link, filename =
+                    placeholders.filename, directory
+                    = placeholders.directory, 
+                    fullpath = placeholders.fullpath, title =
+                    placeholders.title, date =
+                    placeholders.date_string(), podcasttitle =
+                    placeholders.podcasttitle, name =
+                    placeholders.name)
 
 
 # The following are the functions that correspond to the different commands
