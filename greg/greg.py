@@ -85,6 +85,8 @@ class Feed():
         self.directory = self.check_directory()
         self.sync_by_date = self.has_date()
         self.willtag = self.will_tag()
+        if self.willtag:
+            self.defaulttagdict = self.default_tag_dict()
         self.mime = self.retrieve_mime()
         try:
             self.wentwrong = "URLError" in str(self.podcast["bozo_exception"])
@@ -110,6 +112,17 @@ class Feed():
         section = name if config.has_section(name) else config.default_section
         answer = config.get(section,value, fallback=default)
         return answer
+
+    def default_tag_dict(self):
+        config_filename_user = self.session.config_filename_user
+        config = configparser.ConfigParser()
+        config.read([config_filename_global, config_filename_user])
+        default = config.default_section
+        defaultoptions = config.options(default)
+        tags = [[option.replace("tag_", ""),
+            config.get(default, option)] for option 
+            in feedoptions if "tag_" in option] # these are the tags to be filled
+        return dict(tags)
 
     def retrieve_download_path(self): # Retrieves the download path (looks first into config_filename_global
         # then into the [DEFAULT], then the [feed], section of config_filename_user. The latest takes preeminence)
@@ -210,7 +223,11 @@ class Placeholders():
         self.directory = feed.directory
         self.fullpath = os.path.join(self.directory, self.filename)
         self.title = title
-        self.podcasttitle = feed.podcast.title
+        try:
+            print("We are here")
+            self.podcasttitle = feed.podcast.title
+        except AttributeError:
+            self.podcastitle = feed.name
         self.name = feed.name
         self.date = feed.linkdate
 
@@ -264,16 +281,22 @@ def tag(placeholders): # Tags the file at podpath with the information in podcas
     # We first recover the name of the file to be tagged...
     template = placeholders.feed.retrieve_config("tag_file", "{filename}")
     filename = substitute_placeholders(template, placeholders)
-    podpath = os.path.join(placeholders.directory, filename) # ... this is it
+    podpath = os.path.join(placeholders.directory, filename) # ... and this is it
 
+    # now we create a dictionary of tags and values
+    tagdict = placeholders.feed.defaulttagdict # these are the defaults
     feedoptions = placeholders.feed.session.feeds.options(placeholders.name)
+    # this monstruous concatenation of classes... surely a bad idea.
     tags = [[option.replace("tag_", ""),
         placeholders.feed.session.feeds[placeholders.name][option]] for option 
         in feedoptions if "tag_" in option] # these are the tags to be filled
-
+    # Now we combine this list with the default dictionary
     for tag in tags:
-        metadata  = substitute_placeholders(tag[1], placeholders)
-        stagger.util.set_frames(podpath, {tag[0]:metadata})
+        tagdict[tag[0]] = tag[1]
+
+    for tag in tagdict:
+        metadata  = substitute_placeholders(tagdict[tag], placeholders)
+        stagger.util.set_frames(podpath, {tag:metadata})
 
 
 def get_date(line):
