@@ -1,36 +1,31 @@
 # Maintainer: Manolo Martínez <manolo@austrohungaro.com>
 
+_pkgname=greg
 pkgname=greg-git
-pkgver=20130114
+pkgver=0.1.0.14.g8994e3f
 pkgrel=1
 pkgdesc="A command-line podcast aggregator."
 arch=(any)
 url="https://github.com/manolomartinez/greg"
 license=('GPL')
 depends=('python-feedparser')
-optdepends=('python3-stagger-svn: writing tags')
+optdepends=('python3-stagger-svn: writing metadata'
+  'wget: alternative downloadhandler'
+	'aria2: alternative downloadhandler')
 makedepends=('git')
 provides=('greg')
 conflicts=('greg')
+source=('git://github.com/manolomartinez/greg.git')
+md5sums=('SKIP')
 
-_gitroot="git://github.com/manolomartinez/greg.git"
-_gitname="greg"
 
-build() {
-  cd "$srcdir"
-  msg "Connecting to GIT server..."
+pkgver() {
+  cd $_pkgname
+	git describe --always | sed -e 's|-|.|g'
+}
 
-  if [ -d $_gitname ] ; then
-    cd $_gitname && git pull origin
-    msg "The local files are updated."
-  else
-    git clone $_gitroot $_gitname
-  fi
-  msg "GIT checkout done or server timeout"
-
-  rm -rf "$srcdir/$_gitname-build"
-  git clone "$srcdir/$_gitname" "$srcdir/$_gitname-build"
-  cd "$srcdir/$_gitname-build"
+package() {
+  cd "$srcdir/$_pkgname"
 
   msg "Running setup.py..."
   python setup.py install --root="${pkgdir}" --optimize=1
