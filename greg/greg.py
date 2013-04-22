@@ -85,7 +85,6 @@ class Feed():
             self.podcast = feedparser.parse(session.feeds[feed]["url"])
         else:
             self.podcast = podcast
-        self.directory = self.check_directory()
         self.sync_by_date = self.has_date()
         self.willtag = self.will_tag()
         if self.willtag:
@@ -122,40 +121,11 @@ class Feed():
 
     def retrieve_download_path(self): # Retrieves the download path (looks first into config_filename_global
         # then into the [DEFAULT], then the [feed], section of config_filename_user. The latest takes preeminence)
-        config = configparser.ConfigParser()
-        config.read([config_filename_global, self.session.config_filename_user])
-        section = self.name if config.has_section(self.name) else config.default_section
+        section = self.name if self.config.has_section(self.name) else self.config.default_section
         download_path = config.get(section, 'Download directory', fallback='~/Podcasts')
         subdirectory = config.get(section, 'Create subdirectories', fallback='no')
         return [os.path.expanduser(download_path), subdirectory]   
     
-    def check_directory(self): # Find out, and create if needed, the directory in which the feed will be downloaded
-        args = self.args
-        podcast = self.podcast
-        name = self.name
-        try:
-            if args["downloaddirectory"]:
-                ensure_dir(args["downloaddirectory"])
-                return args["downloaddirectory"]
-        except KeyError:
-            pass
-        download_path = self.retrieve_download_path()[0]
-        subdirectory = self.retrieve_download_path()[1]
-        if subdirectory == "title":
-            try:
-                directory = os.path.join(download_path, podcast.feed.title)
-            except:
-                print("You want me to use the feed title to name the directory in which this podcast is saved, but this feed apparently has no title. I will use the name you gave me for it.", file = sys.stderr, flush = True)
-                directory = os.path.join(download_path, name)
-        elif subdirectory == "name":
-            if name != 'DEFAULT':
-                directory = os.path.join(download_path, name)
-            else:
-                directory = download_path
-        else:
-            directory = download_path
-        ensure_dir(directory)
-        return directory
 
     def has_date(self):
         podcast = self.podcast
@@ -216,8 +186,7 @@ class Placeholders():
         self.feed = feed
         self.link = link
         self.filename = filename
-        self.directory = feed.directory
-        self.fullpath = os.path.join(self.directory, self.filename)
+        #self.fullpath = os.path.join(self.directory, self.filename)
         self.title = title
         try:
             self.podcasttitle = feed.podcast.title
@@ -256,6 +225,37 @@ def ensure_dir(dirname):
     except OSError:
         if not os.path.isdir(dirname):
             raise
+
+def check_directory(placeholders): # Find out, and create if needed, the directory in which the feed will be downloaded
+    feed = placeholders.feed
+    args = feed.args
+    podcast = feed.podcast
+    name = feed.name
+    placeholders.directory = "This very directory" # wink, wink
+    placeholders.fullpath = os.path.join(placeholders.directory,
+        placeholders.filename)
+    try:
+        if args["downloaddirectory"]:
+            ensure_dir(args["downloaddirectory"])
+            placeholders.directory =  args["downloaddirectory"]
+    except KeyError:
+        pass
+    download_path = os.path.expanduser(feed.retrieve_config("Download Directory",
+            "~/Podcasts"))
+    subdirectory = feed.retrieve_config("Create subdirectory",
+            "no")
+    if "no" in subdirectory:
+        placeholders.directory = download_path
+    elif "yes" in subdirectory:
+        subdnametemplate = feed.retrieve_config("subdirectory_name",
+                "{podcasttitle}")
+        subdname = substitute_placeholders(subdnametemplate, placeholders, "normal")
+        placeholders.directory = os.path.join(download_path, subdname)
+        print(placeholders.directory)
+    ensure_dir(placeholders.directory)
+    placeholders.fullpath = os.path.join(placeholders.directory,
+        placeholders.filename)
+    return placeholders
 
 def parse_for_download(args):  # Turns an argument such as 4, 6-8, 10 into a list such as [4,6,7,8,10]
     single_arg="" # in the first bit we put all arguments together and take out any extra spaces
@@ -315,6 +315,7 @@ def transition(args, feed, feeds): # A function to ease the transition to indivi
 def download_handler(feed, placeholders):
     args = feed.args
     name = feed.name
+    placeholders = check_directory(placeholders)
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
         while os.path.isfile(placeholders.fullpath):
