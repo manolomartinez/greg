@@ -9,8 +9,6 @@ url="https://github.com/manolomartinez/greg"
 license=('GPL')
 depends=('python-feedparser')
 optdepends=('python3-stagger-svn: writing tags')
-provides=('greg')
-conflicts=('greg-git')
 source=("https://github.com/manolomartinez/greg/archive/${pkgver}.tar.gz")
 md5sums=('2a562128e220749d39929286a6aeffed')
 
