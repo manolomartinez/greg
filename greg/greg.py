@@ -251,7 +251,6 @@ def check_directory(placeholders): # Find out, and create if needed, the directo
                 "{podcasttitle}")
         subdname = substitute_placeholders(subdnametemplate, placeholders, "normal")
         placeholders.directory = os.path.join(download_path, subdname)
-        print(placeholders.directory)
     ensure_dir(placeholders.directory)
     placeholders.fullpath = os.path.join(placeholders.directory,
         placeholders.filename)
@@ -550,6 +549,8 @@ def check(args):
 def download(args):
     session = Session(args)
     issues = parse_for_download(args)
+    if issues == ['']:
+        sys.exit("You need to give a list of issues, of the form ""a, b-c, d...""")
     dumpfilename = os.path.join(session.data_dir, 'feeddump')
     if not(os.path.isfile(dumpfilename)):
         sys.exit("You need to run ""greg check <feed>"" before using ""greg download"".")
@@ -563,6 +564,7 @@ def download(args):
         entry = dump[1].entries[eval(number)]
         feed.info = []
         feed.entrylinks = []
+        feed.linkdate = list(time.localtime())
         download_entry(feed, entry)
 
 
