@@ -66,9 +66,9 @@ All of these podcasts will be downloaded to the default download directory for t
 
     greg remove PhilosophyBites
 
-If we keep it, we might want to start sync'ing from, say, the 1st of November, 2012, on. So we edit the feed information
+If we keep it, we might want to start sync'ing from, say, the 30th of April, 2013, on. So we edit the feed information
 
-    greg edit PhilosophyBites -d 01/11/12
+    greg edit PhilosophyBites -d 2013-4-30
 
 `-d` or `--downloadfrom` change the date after which Greg should start downloading episodes when it syncs. Currently, the only two things one can `edit` in a feed are the download-from date and `--url` -- but many more things can be changed by editing the config file. `greg edit -h` will give help you with the `edit` options and syntax -- likewise for the rest of Greg subcommands.
 
@@ -85,7 +85,7 @@ which returns
     PhilosophyBites
     ---------------
         url: http://philosophybites.com/atom.xml
-        Next sync will download from: 01 Nov 2012 00:00:00.
+        Next sync will download from: 30 Apr 2013 00:00:00.
 
     History
     -------
@@ -95,7 +95,7 @@ Let us add another feed:
 
     greg add MusicaAntigua http://www.rtve.es/api/programas/23353/audios.rss
 
-This is a great program on ancient music at the Spanish public radio. The thing is, these guys do not tag their episodes, which is bad for most portable media players. Greg uses [stagger](http://pypi.python.org/pypi/stagger/0.4.2) (as an optional dependency) to tag podcasts, if one so wishes. It uses the podcast name for the *artist* tag, and the entry title for the *title* tag. To enable tagging for MusicaAntigua, copy the system-wide config file locally:
+This is a great program on ancient music at the Spanish public radio. The thing is, these guys do not tag their episodes, which is bad for most portable media players. Greg uses [stagger](http://pypi.python.org/pypi/stagger/0.4.2) (as an optional dependency) to tag podcasts, if one so wishes. By default, it uses the podcast name for the *artist* tag, and the entry title for the *title* tag. To enable tagging for MusicaAntigua, copy the system-wide config file locally:
 
     cp /etc/greg.conf ~/.config/greg/greg.conf
 
@@ -105,6 +105,13 @@ and add a section for MusicaAntigua:
 
     Tag = yes
 
+In fact, you can fill out any tag however you see fit. For example,
+
+    tag_genre = Ancient Music
+    tag_comment = {date}
+
+will fill the *genre* tag with the string "Ancient Music", and the *comment* tag with the download date.
+    
 Finally, let us add a video podcast
 
     greg add TEDTalks http://feeds.feedburner.com/TEDTalks_video
