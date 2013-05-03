@@ -241,7 +241,7 @@ def FeedburnerDateHandler(aDateString):
     try:
         # feedparser is supposed to catch the exception on its own,
         # but it doesn't
-        month, day, year, hour, minute = feedburner_date_pattern.search(
+        month, day, year, hour, minute = _feedburner_date_pattern.search(
             aDateString).groups()
         return (
             int(year), int(months[month]), int(
@@ -421,25 +421,26 @@ def parse_feed_info(info):
 
 def substitute_placeholders(string, placeholders, mode):
     if mode == "safe":
-        return string.format(link=placeholders.link,
-                             filename=placeholders.filename,
-                             directory=shlex.quote(placeholders.directory),
-                             fullpath=placeholders.fullpath,
-                             title=shlex.quote(placeholders.title),
-                             date=placeholders.date_string(),
-                             podcasttitle=shlex.quote(
-                                 placeholders.podcasttitle),
-                             name=shlex.quote(placeholders.name))
-    if mode == "normal":
-        return string.format(link=placeholders.link,
-                             filename=placeholders.filename,
-                             directory=placeholders.directory,
-                             fullpath=placeholders.fullpath,
-                             title=placeholders.title,
-                             date=placeholders.date_string(),
-                             podcasttitle=placeholders.podcasttitle,
-                             name=placeholders.name)
+        newst = string.format(link=placeholders.link,
+                              filename=placeholders.filename,
+                              directory=placeholders.directory,
+                              fullpath=placeholders.fullpath,
+                              title=placeholders.title,
+                              date=placeholders.date_string(),
+                              podcasttitle=placeholders.podcasttitle,
+                              name=placeholders.name)
 
+    if mode == "normal":
+        newst = string.format(link=shlex.quote(placeholders.link),
+                              filename=shlex.quote(placeholders.filename),
+                              directory=shlex.quote(placeholders.directory),
+                              fullpath=shlex.quote(placeholders.fullpath),
+                              title=shlex.quote(placeholders.title),
+                              date=placeholders.date_string(),
+                              podcasttitle=shlex.quote(
+                                  placeholders.podcasttitle),
+                              name=shlex.quote(placeholders.name))
+    return newst
 
 # The following are the functions that correspond to the different commands
 
@@ -599,8 +600,11 @@ def check(args):
         url = args["url"]
         name = "DEFAULT"
     else:
-        url = session.feeds[args["feed"]]["url"]
-        name = args["feed"]
+        try:
+            url = session.feeds[args["feed"]]["url"]
+            name = args["feed"]
+        except KeyError:
+            sys.exit("You don't appear to have a feed with that name.")
     try:
         podcast = feedparser.parse(url)
         wentwrong = "urlopen" in str(podcast["bozo_exception"])
