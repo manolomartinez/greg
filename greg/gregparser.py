@@ -98,13 +98,13 @@ parser_remove.add_argument('name', help='the name of the feed you want to remove
 parser_remove.set_defaults(func=greg.greg.remove)
 
 def main(): # parse the args and call whatever function was selected
-    #try:
-    #    args = parser.parse_args(sys.argv[1:])
-    #    args.func(vars(args))
-    #except AttributeError as err:
-    #    if str(err) == "\'Namespace\' object has no attribute \'func\'":
-    #        parser.print_help()
-    #    else:
-    #        print("Something has gone wrong: {}".format(err), file = sys.stderr, flush = True)
-    args = parser.parse_args(sys.argv[1:])
-    args.func(vars(args))
+    try:
+        args = parser.parse_args(sys.argv[1:])
+        args.func(vars(args))
+    except AttributeError as err:
+        if str(err) == "\'Namespace\' object has no attribute \'func\'":
+            parser.print_help()
+        else:
+            print("Something has gone wrong: {}".format(err), file = sys.stderr, flush = True)
+    #args = parser.parse_args(sys.argv[1:])
+    #args.func(vars(args))
