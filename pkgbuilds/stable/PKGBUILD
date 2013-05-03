@@ -8,7 +8,9 @@ arch=(any)
 url="https://github.com/manolomartinez/greg"
 license=('GPL')
 depends=('python-feedparser')
-optdepends=('python3-stagger-svn: writing tags')
+optdepends=('python3-stagger-svn: writing metadata'
+  'wget: alternative downloadhandler'
+	'aria2: alternative downloadhandler')
 source=("https://github.com/manolomartinez/greg/archive/${pkgver}.tar.gz")
 md5sums=('87fa7c9e569f5752686455b66d541507')
 package() {
