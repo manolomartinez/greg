@@ -2,7 +2,7 @@
 
 _pkgname=greg
 pkgname=greg-git
-pkgver=0.1.0.14.g8994e3f
+pkgver=0.2.0.14.g8994e3f
 pkgrel=1
 pkgdesc="A command-line podcast aggregator."
 arch=(any)
