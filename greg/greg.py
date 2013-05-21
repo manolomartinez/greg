@@ -340,6 +340,11 @@ def tag(placeholders):
             tagdict[tag], placeholders, "normal")
         stagger.util.set_frames(podpath, {tag: metadata})
 
+def filtercond(placeholders):
+    template = placeholders.feed.retrieve_config("filter", "True")
+    condition = substitute_placeholders(template, placeholders, "normal")
+    return eval(condition)
+
 
 def get_date(line):
     date = eval(line.split(sep=' ', maxsplit=1)[1])
@@ -382,23 +387,24 @@ def download_entry(feed, entry):
     for podname in downloadlinks:
         if podname not in feed.entrylinks:
             try:
-                print("Downloading {} -- {}".format(entry.title, podname))
                 title = entry.title
             except:
-                print("Downloading entry -- {}".format(podname))
                 title = podname
             try:
                 placeholders = Placeholders(
                     feed, downloadlinks[podname], podname, title)
-                download_handler(feed, placeholders)
-                if feed.willtag:
-                    tag(placeholders)
-                if feed.info:
-                    with open(feed.info, 'a') as current:
-                        # We write to file this often to ensure that downloaded
-                        # entries count as downloaded.
-                        current.write(''.join([podname, ' ',
-                                               str(feed.linkdate), '\n']))
+                condition = filtercond(placeholders)
+                if condition:
+                    print("Downloading {} -- {}".format(title, podname))
+                    download_handler(feed, placeholders)
+                    if feed.willtag:
+                        tag(placeholders)
+                    if feed.info:
+                        with open(feed.info, 'a') as current:
+                            # We write to file this often to ensure that downloaded
+                            # entries count as downloaded.
+                            current.write(''.join([podname, ' ',
+                                                   str(feed.linkdate), '\n']))
             except URLError:
                 sys.exit("... something went wrong.\
                          Are you sure you are connected to the internet?")
