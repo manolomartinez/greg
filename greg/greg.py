@@ -364,7 +364,6 @@ def transition(args, feed, feeds):
 
 
 def download_handler(feed, placeholders):
-    placeholders = check_directory(placeholders)
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
         while os.path.isfile(placeholders.fullpath):
@@ -393,6 +392,7 @@ def download_entry(feed, entry):
             try:
                 placeholders = Placeholders(
                     feed, downloadlinks[podname], podname, title)
+                placeholders = check_directory(placeholders)
                 condition = filtercond(placeholders)
                 if condition:
                     print("Downloading {} -- {}".format(title, podname))
@@ -405,6 +405,8 @@ def download_entry(feed, entry):
                             # entries count as downloaded.
                             current.write(''.join([podname, ' ',
                                                    str(feed.linkdate), '\n']))
+                else:
+                    print("Skipping {} -- {}".format(title, podname))
             except URLError:
                 sys.exit("... something went wrong.\
                          Are you sure you are connected to the internet?")
