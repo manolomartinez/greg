@@ -1,7 +1,7 @@
 greg
 ====
 
-A command-line podcast aggregator. It basically exposes some of the functionality of the excellent [feedparser](http://pypi.python.org/pypi/feedparser).
+A command-line podcast aggregator, written in python 3. It basically exposes some of the functionality of the excellent [feedparser](http://pypi.python.org/pypi/feedparser) -- feedparser and python are its only non-optional dependencies.
 
 # Usage
 
