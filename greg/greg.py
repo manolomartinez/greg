@@ -256,7 +256,7 @@ feedparser.registerDateHandler(FeedburnerDateHandler)
 # The following are some auxiliary functions
 
 def sanitize(string):
-    sanestring = ''.join([x for x in string if x.isalnum()])
+    sanestring = ''.join([x if x.isalnum() else "_" for x in string])
     return sanestring
 
 
