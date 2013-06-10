@@ -215,10 +215,12 @@ class Placeholders():
         self.filename = filename
         #self.fullpath = os.path.join(self.directory, self.filename)
         self.title = title
+        self.filename_title = sanitize(title)
         try:
             self.podcasttitle = feed.podcast.title
         except AttributeError:
             self.podcasttitle = feed.name
+        self.filename_podcasttitle = sanitize(self.podcasttitle)
         self.name = feed.name
         self.date = tuple(feed.linkdate)
 
@@ -252,6 +254,10 @@ def FeedburnerDateHandler(aDateString):
 feedparser.registerDateHandler(FeedburnerDateHandler)
 
 # The following are some auxiliary functions
+
+def sanitize(string):
+    sanestring = ''.join([x for x in string if x!="/"])
+    return sanestring
 
 
 def ensure_dir(dirname):
@@ -434,8 +440,10 @@ def substitute_placeholders(string, placeholders, mode):
                               directory=placeholders.directory,
                               fullpath=placeholders.fullpath,
                               title=placeholders.title,
+                              filename_title = placeholders.filename_title,
                               date=placeholders.date_string(),
                               podcasttitle=placeholders.podcasttitle,
+                              filename_podcasttitle=placeholders.filename_podcasttitle,
                               name=placeholders.name)
 
     if mode == "normal":
@@ -444,9 +452,13 @@ def substitute_placeholders(string, placeholders, mode):
                               directory=shlex.quote(placeholders.directory),
                               fullpath=shlex.quote(placeholders.fullpath),
                               title=shlex.quote(placeholders.title),
+                              filename_title = shlex.quote(
+                                  placeholders.filename_title),
                               date=placeholders.date_string(),
                               podcasttitle=shlex.quote(
                                   placeholders.podcasttitle),
+                              filename_podcasttitle=shlex.quote(
+                                  placeholders.filename_podcasttitle),
                               name=shlex.quote(placeholders.name))
     return newst
 
