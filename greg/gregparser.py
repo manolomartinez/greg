@@ -19,6 +19,7 @@ import argparse, time, sys
 from urllib.parse import urlparse
 
 import greg.greg
+import greg.daemon
 
 # defining the from_date type
 def from_date(string):
@@ -96,6 +97,13 @@ parser_download.set_defaults(func=greg.greg.download)
 parser_remove = subparsers.add_parser('remove', help='removes feed(s)')
 parser_remove.add_argument('name', help='the name of the feed you want to remove')
 parser_remove.set_defaults(func=greg.greg.remove)
+
+# create the parser for the "remove" command
+parser_daemon = subparsers.add_parser('daemon', help='run greg in daemon')
+parser_daemon.add_argument('--start', help='start the greg-daemon', action='store_true')
+parser_daemon.add_argument('--stop', help='stop the greg-daemon', action='store_true')
+parser_daemon.add_argument('-t', help='the time after halt recheck the new podcast')
+parser_daemon.set_defaults(func=greg.daemon.main)
 
 def main(): # parse the args and call whatever function was selected
     try:
