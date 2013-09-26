@@ -15,31 +15,67 @@
 # You should have received a copy of the GNU General Public License
 # along with Greg.  If not, see <http://www.gnu.org/licenses/>.
 
-# Just for devel
 import os
 import sys
-
+import configparser
+from datetime import datetime
+from pwd import getpwnam  
 from time import sleep
 import daemonic
 
-import greg
+from greg.greg import *
 
 class Daemon():
-    def __init__(self, time):
-        self.pidfile_path = os.path.dirname(__file__)+'.pid'
+    def __init__(self, args, time=0, user=None):
+        self.daemon_user = user
+        self.pidfile_path = '/var/run/greg/greg.pid'
         self.sleep_time = time 
-        
-    def start(self):
-        stout = open(os.path.dirname(__file__)+".log", "a")
-        err = open(os.path.dirname(__file__)+".error", "a")
-        d = daemonic.daemon(pidfile=self.pidfile_path, stdout=stout, stderr=err)
-        with d:
-            while True :
-                sleep(self.sleep_time)
+        self.session = Session(args)
+        self.feeds_time = configparser.ConfigParser()
+        self.feeds_time_path = os.path.join(self.session.data_dir, "feed_time")
+        self.feeds_time.read(self.feeds_time_path)
+        self.date_format = "%a, %d %b %Y %H:%M:%S %z"
 
+    def start(self):
+        out = open("/var/log/greg/message.log", "a")
+        err = open("/var/log/greg/error.log", "a")
+        d = daemonic.daemon(pidfile=self.pidfile_path, stdout=out, stderr=err, user=self.daemon_user)
+        
+        with d:
+            print(os.getuid())
+            while True :
+                self.__daemon_work()
+                sleep(self.sleep_time)
+        
     def stop(self):
         d = daemonic.daemon(pidfile=self.pidfile_path)
         d.stop()
+
+    def __daemon_work(self):
+        print("Check podcast caca"+datetime.now().strftime(self.date_format)+".")
+        self.session.config_filename_user = self.session.retrieve_config_file()
+        self.session.data_dir = self.session.retrieve_data_directory()
+        self.session.data_filename =  os.path.join(self.session.data_dir, "data")
+        print(self.session.list_feeds())
+        for feed_name in self.session.list_feeds():
+            podcast = create_podcast(self.session.feeds[feed_name]["url"])
+        
+            remote_date = datetime.strptime(podcast.entries[0]["published"], self.date_format)
+            local_date = datetime.strptime(self.feeds_time[feed_name]["date"], self.date_format)
+            print("Up to date "+feed_time+". "+(remote_date>local_date))
+            if remote_date > local_date:
+                load_feed = Feed(self.session, feed_name, podcast)
+                load_feed.linkdate = list(time.localtime())
+                download_entry(load_feed, podcast.entries[0])
+
+                entry = {}
+                entry["date"] = remote_date
+
+                self.feeds_time[feed_name] = entry
+                with open(self.feeds_time_path, 'w') as configfile:
+                    self.feeds_time.write(configfile)
+            else:
+                print(feed_name+" podcast is uptodate.")
 
 def main(args) :
     # Create daemon object
@@ -47,10 +83,10 @@ def main(args) :
         if not(args["t"]):
             sys.exit("You dont set the time betowen tow check.")
         else:
-            daemon = Daemon(int(args["t"][0]))
+            daemon = Daemon(args, time=int(args["t"][0]), user=args["u"])
             daemon.start()
     elif args["stop"]:
-            daemon = Daemon(0)
+            daemon = Daemon(args)
             daemon.stop()
     else:
         sys.exit("You need specifie start or stop.")

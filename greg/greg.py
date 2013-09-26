@@ -625,14 +625,8 @@ def check(args):
             name = args["feed"]
         except KeyError:
             sys.exit("You don't appear to have a feed with that name.")
-    try:
-        podcast = feedparser.parse(url)
-        wentwrong = "urlopen" in str(podcast["bozo_exception"])
-    except KeyError:
-        wentwrong = False
-    if wentwrong:
-        sys.exit("I cannot check that podcast now.\
-                 You are probably not connected to the internet.")
+   
+    podcast = create_podcast(url)
     for entry in enumerate(podcast.entries):
         listentry = list(entry)
         print(listentry[0], end=": ")
@@ -650,6 +644,17 @@ def check(args):
         dump = [name, podcast]
         pickle.dump(dump, dumpfile)
 
+def create_podcast(url):
+    try:
+        podcast = feedparser.parse(url)
+        wentwrong = "urlopen" in str(podcast["bozo_exception"])
+    except KeyError:
+        wentwrong = False
+    if wentwrong:
+        sys.exit("I cannot check that podcast now.\
+                 You are probably not connected to the internet.")
+    else:
+        return podcast
 
 def download(args):
     session = Session(args)

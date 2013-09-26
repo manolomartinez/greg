@@ -103,6 +103,7 @@ parser_daemon = subparsers.add_parser('daemon', help='run greg in daemon')
 parser_daemon.add_argument('--start', help='start the greg-daemon', action='store_true')
 parser_daemon.add_argument('--stop', help='stop the greg-daemon', action='store_true')
 parser_daemon.add_argument('-t', help='the time after halt recheck the new podcast')
+parser_daemon.add_argument('-u', help='the user we run the daemon')
 parser_daemon.set_defaults(func=greg.daemon.main)
 
 def main(): # parse the args and call whatever function was selected
