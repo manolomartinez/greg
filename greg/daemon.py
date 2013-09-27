@@ -25,9 +25,10 @@ import daemonic
 from greg.greg import *
 
 class Daemon():
-    def __init__(self, args, time=0, user=None):
+    def __init__(self, args, time=0, user=None, log="/var/log/greg/", pid='/var/run/greg/greg.pid'):
         self.daemon_user = user
-        self.pidfile_path = '/var/run/greg/greg.pid'
+        self.pidfile_path = pid
+        self.log_dir = log
         self.sleep_time = time 
         self.session = Session(args)
         self.feeds_time = configparser.ConfigParser()
@@ -37,8 +38,8 @@ class Daemon():
         self.date_format_podcast = "%a, %d %b %Y %H:%M:%S %z"
 
     def start(self):
-        out = open("/var/log/greg/message.log", "a")
-        err = open("/var/log/greg/error.log", "a")
+        out = open(os.path.join(self.log_dir, "message.log"), "a")
+        err = open(os.path.join(self.log_dir, "error.log"), "a")
         d = daemonic.daemon(pidfile=self.pidfile_path, stdout=out, stderr=err, user=self.daemon_user)
 
         with d:
@@ -100,14 +101,16 @@ class Daemon():
 
 def main(args) :
     # Create daemon object
-    if args["start"]:
-        if not(args["t"]):
+    if args["command"] == "start":
+        if not(args["time"]):
             sys.exit("You dont set the time betowen tow check.")
+        elif not(args["user"]):
+            sys.exit("You dont set the user of worker processe.")
         else:
-            daemon = Daemon(args, time=int(args["t"][0]), user=args["u"])
+            daemon = Daemon(args, time=int(args["time"][0]), user=args["user"], log=args["log_dir"], pid=args["pid_file"])
             daemon.start()
-    elif args["stop"]:
-            daemon = Daemon(args)
+    elif args["command"] == "stop":
+            daemon = Daemon(args, log=args["log_dir"], pid=args["pid_file"])
             daemon.stop()
     else:
         sys.exit("You need specifie start or stop.")
