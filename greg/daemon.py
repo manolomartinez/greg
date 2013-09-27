@@ -19,7 +19,6 @@ import os
 import sys
 import configparser
 from datetime import datetime
-from pwd import getpwnam  
 from time import sleep
 import daemonic
 
@@ -34,48 +33,70 @@ class Daemon():
         self.feeds_time = configparser.ConfigParser()
         self.feeds_time_path = os.path.join(self.session.data_dir, "feed_time")
         self.feeds_time.read(self.feeds_time_path)
-        self.date_format = "%a, %d %b %Y %H:%M:%S %z"
+        self.date_format_write = "%Y-%m-%d %H:%M:%S%z"
+        self.date_format_podcast = "%a, %d %b %Y %H:%M:%S %z"
 
     def start(self):
         out = open("/var/log/greg/message.log", "a")
         err = open("/var/log/greg/error.log", "a")
         d = daemonic.daemon(pidfile=self.pidfile_path, stdout=out, stderr=err, user=self.daemon_user)
-        
+
         with d:
-            print(os.getuid())
             while True :
                 self.__daemon_work()
                 sleep(self.sleep_time)
-        
+
     def stop(self):
         d = daemonic.daemon(pidfile=self.pidfile_path)
         d.stop()
 
     def __daemon_work(self):
-        print("Check podcast caca"+datetime.now().strftime(self.date_format)+".")
+        print("Check podcast "+datetime.now().strftime(self.date_format_podcast)+".")
+        # Set data and conf file after change user
         self.session.config_filename_user = self.session.retrieve_config_file()
         self.session.data_dir = self.session.retrieve_data_directory()
-        self.session.data_filename =  os.path.join(self.session.data_dir, "data")
-        print(self.session.list_feeds())
+        self.session.data_filename = os.path.join(self.session.data_dir, "data")
+        self.session.feeds.read(self.session.data_filename)
+        self.session.config.read([config_filename_global, self.session.config_filename_user])
+        self.feeds_time_path = os.path.join(self.session.data_dir, "feed_time")
+        self.feeds_time.read(self.feeds_time_path)
+
+        # For each feed check if update
         for feed_name in self.session.list_feeds():
+            print("Check "+feed_name+" feed")
+
+            # Find date of last podcast in remote and local
             podcast = create_podcast(self.session.feeds[feed_name]["url"])
-        
-            remote_date = datetime.strptime(podcast.entries[0]["published"], self.date_format)
-            local_date = datetime.strptime(self.feeds_time[feed_name]["date"], self.date_format)
-            print("Up to date "+feed_time+". "+(remote_date>local_date))
+
+            # Test if is the first check of this feed
+            if feed_name not in self.feeds_time.sections():
+                 self.__download_podcast(feed_name, podcast)
+
+            remote_date_str = re.sub("(.*\s\+\d\d):(\d\d)$", r"\1\2", podcast.entries[0]["published"])
+            local_date_str = re.sub("(.*\+\d\d):(\d\d)$", r"\1\2", self.feeds_time[feed_name]["date"])
+            remote_date = datetime.strptime(remote_date_str, self.date_format_podcast)
+            local_date = datetime.strptime(local_date_str, self.date_format_write)
+
+            # If remote_date up local_date why need download the last podcast
             if remote_date > local_date:
-                load_feed = Feed(self.session, feed_name, podcast)
-                load_feed.linkdate = list(time.localtime())
-                download_entry(load_feed, podcast.entries[0])
-
-                entry = {}
-                entry["date"] = remote_date
-
-                self.feeds_time[feed_name] = entry
-                with open(self.feeds_time_path, 'w') as configfile:
-                    self.feeds_time.write(configfile)
+                self.__download_podcast(feed_name, podcast)
             else:
                 print(feed_name+" podcast is uptodate.")
+
+    def __download_podcast(self, feed_name, podcast):
+        # Download podcast
+        load_feed = Feed(self.session, feed_name, podcast)
+        load_feed.info = []
+        load_feed.entrylinks = []
+        load_feed.linkdate = list(time.localtime())
+        download_entry(load_feed, podcast.entries[0])
+
+        # Set time value in local storage
+        entry = {}
+        entry["date"] = remote_date
+        self.feeds_time[feed_name] = entry
+        with open(self.feeds_time_path, 'w') as configfile:
+            self.feeds_time.write(configfile)
 
 def main(args) :
     # Create daemon object
@@ -90,4 +111,3 @@ def main(args) :
             daemon.stop()
     else:
         sys.exit("You need specifie start or stop.")
-   
