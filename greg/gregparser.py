@@ -101,10 +101,10 @@ parser_remove.set_defaults(func=greg.greg.remove)
 # create the parser for the "remove" command
 parser_daemon = subparsers.add_parser('daemon', help='run greg in daemon')
 parser_daemon.add_argument('command', help='greg daemon command [start|stop]', action='store')
-parser_daemon.add_argument('-t', '--time', help='the time after recheck the new podcast')
+parser_daemon.add_argument('-t', '--time', type=int, help='the time after recheck the new podcast')
 parser_daemon.add_argument('-u', '--user', help='the user we run the daemon')
-parser_daemon.add_argument('-l', '--log-dir', help='the dir where write log')
-parser_daemon.add_argument('-p', '--pid-file', help='the file where write pid')
+parser_daemon.add_argument('-l', '--log-dir', help='the dir where write log', default="/var/log/greg/")
+parser_daemon.add_argument('-p', '--pid-file', help='the file where write pid', default='/var/run/greg/greg.pid')
 parser_daemon.set_defaults(func=greg.daemon.main)
 
 def main(): # parse the args and call whatever function was selected

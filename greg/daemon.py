@@ -107,7 +107,7 @@ def main(args) :
         elif not(args["user"]):
             sys.exit("You dont set the user of worker processe.")
         else:
-            daemon = Daemon(args, time=int(args["time"][0]), user=args["user"], log=args["log_dir"], pid=args["pid_file"])
+            daemon = Daemon(args, time=args["time"], user=args["user"], log=args["log_dir"], pid=args["pid_file"])
             daemon.start()
     elif args["command"] == "stop":
             daemon = Daemon(args, log=args["log_dir"], pid=args["pid_file"])
