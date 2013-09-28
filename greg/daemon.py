@@ -69,13 +69,14 @@ class Daemon():
             # Find date of last podcast in remote and local
             podcast = create_podcast(self.session.feeds[feed_name]["url"])
 
+            remote_date_str = re.sub("(.*\s\+\d\d):(\d\d)$", r"\1\2", podcast.entries[0]["published"])
+            remote_date = datetime.strptime(remote_date_str, self.date_format_podcast)
+
             # Test if is the first check of this feed
             if feed_name not in self.feeds_time.sections():
-                 self.__download_podcast(feed_name, podcast)
+                 self.__download_podcast(feed_name, podcast, remote_date)
 
-            remote_date_str = re.sub("(.*\s\+\d\d):(\d\d)$", r"\1\2", podcast.entries[0]["published"])
             local_date_str = re.sub("(.*\+\d\d):(\d\d)$", r"\1\2", self.feeds_time[feed_name]["date"])
-            remote_date = datetime.strptime(remote_date_str, self.date_format_podcast)
             local_date = datetime.strptime(local_date_str, self.date_format_write)
 
             # If remote_date up local_date why need download the last podcast
@@ -84,7 +85,7 @@ class Daemon():
             else:
                 print(feed_name+" podcast is uptodate.")
 
-    def __download_podcast(self, feed_name, podcast):
+    def __download_podcast(self, feed_name, podcast, remote_date):
         # Download podcast
         load_feed = Feed(self.session, feed_name, podcast)
         load_feed.info = []
