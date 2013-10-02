@@ -10,6 +10,8 @@ setup(  name='Greg',
         url='https://github.com/manolomartinez/greg',
         packages=['greg'],
         scripts=['bin/greg'],
-        data_files=[('/etc',['data/greg.conf'])],
+        data_files=[('/etc',['data/greg.conf']),
+                    ('/var/run/greg/',[]),
+                    ('/var/log/greg/',[])],
         license = 'GPLv3'
         )
