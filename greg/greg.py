@@ -292,7 +292,7 @@ def check_directory(placeholders):
         subdnametemplate = feed.retrieve_config(
             "subdirectory_name", "{podcasttitle}")
         subdname = substitute_placeholders(
-            subdnametemplate, placeholders, "normal")
+            subdnametemplate, placeholders, "safe")
         placeholders.directory = os.path.join(download_path, subdname)
     ensure_dir(placeholders.directory)
     placeholders.fullpath = os.path.join(
