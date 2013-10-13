@@ -112,7 +112,7 @@ In fact, you can fill out any tag however you see fit. For example,
 
 will fill the *genre* tag with the string "Ancient Music", and the *comment* tag with the download date.
     
-Finally, let us add a video podcast
+Let's add a video podcast
 
     greg add TEDTalks http://feeds.feedburner.com/TEDTalks_video
 
@@ -131,5 +131,11 @@ Another useful thing that you can change in the config file is the download hand
 in my local `greg.conf`. You can do all sorts of nice things with this. For example, when `check`ing a podcast, you don't need to download it, but maybe just stream it, like this:
 
     greg download 0 --downloadhandler "mplayer {link}"
+
+One last thing: if you subscribe to a very active feed, and you are only interested in some of the entries, you can filter the feed. For example, if you only want to watch TED talks about Google, say, you can add the following line to the `[TEDTalks]` section:
+
+    filter = "Google" in "{title}"
+
+(You need the quotes around {title} if the string you are filtering by has spaces, for example; they are strictly unnecessary here.)
 
 For information about the {placeholders}, take a look at [greg.conf](https://github.com/manolomartinez/greg/blob/master/data/greg.conf). In `greg.conf` you can also change the download directory, and some other things. It should be self-explanatory.
