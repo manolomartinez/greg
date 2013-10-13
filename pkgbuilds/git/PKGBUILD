@@ -21,7 +21,7 @@ md5sums=('SKIP')
 
 pkgver() {
   cd $_pkgname
-	git describe --always | sed -e 's|-|.|g'
+  git describe --tags --always | sed -e 's|-|.|g'
 }
 
 package() {
