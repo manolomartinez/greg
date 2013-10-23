@@ -31,7 +31,6 @@ from urllib.parse import urlparse
 from urllib.error import URLError
 
 import feedparser
-from bs4 import BeautifulSoup
 
 try:  # Stagger is an optional dependency
     import stagger
@@ -40,6 +39,11 @@ try:  # Stagger is an optional dependency
 except ImportError:
     staggerexists = False
 
+try:  # beautifulsoup4 is an optional dependency
+    from bs4 import BeautifulSoup
+    beautifulsoupexists = True
+except ImportError:
+    beautifulsoupexists = False
 
 config_filename_global = '/etc/greg.conf'
 
@@ -228,8 +232,7 @@ class Placeholders():
         except AttributeError:
             self.podcasttitle = feed.name
         try:
-            subtitle = BeautifulSoup(feed.podcast.feed.subtitle)
-            self.sanitizedsubtitle = subtitle.get_text()
+            self.sanitizedsubtitle = htmltotext(feed.podcast.feed.subtitle)
             if self.sanitizedsubtitle == "":
                 self.sanitizedsubtitle = "No description"
         except AttributeError:
@@ -284,6 +287,13 @@ def ensure_dir(dirname):
         if not os.path.isdir(dirname):
             raise
 
+def htmltotext(data):
+    if beautifulsoupexists:
+        beautify = BeautifulSoup(data)
+        sanitizeddata = beautify.get_text()
+    else:
+        sanitizeddata = data
+    return sanitizeddata
 
 def check_directory(placeholders):
     # Find out, and create if needed,
@@ -413,8 +423,7 @@ def download_entry(feed, entry):
             except:
                 title = podname
             try:
-                summary = BeautifulSoup(entry.summary)
-                sanitizedsummary = summary.get_text()
+                sanitizedsummary = htmltotext(entry.summary)
                 if sanitizedsummary == "":
                     sanitizedsummary = "No summary available"
             except:
