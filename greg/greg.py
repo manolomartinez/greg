@@ -190,9 +190,9 @@ class Feed():
                 willtag = True
             else:
                 willtag = False
-                print("You want me to tag {0}, but you have not installed the\
-                      Stagger module. I cannot honour your request.".
-                      format(feed), file=sys.stderr, flush=True)
+                print(("You want me to tag {0}, but you have not installed the "
+                      "Stagger module. I cannot honour your request.").
+                      format(self.name), file=sys.stderr, flush=True)
         else:
             willtag = False
         return willtag
