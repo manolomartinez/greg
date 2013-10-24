@@ -167,10 +167,10 @@ class Feed():
                 try:
                     test = podcast.entries[0].published_parsed
                     sync_by_date = True
-                except (AttributeError, IndexError):  # Otherwise, we use download links.
-                    print(
-                            "I cannot parse the time information of this feed.\
-                                    I'll use your current local time instead.",
+                except (AttributeError, IndexError):
+                    # Otherwise, we use download links.
+                    print(("I cannot parse the time information of this feed."
+                           "I'll use your current local time instead."),
                                     file=sys.stderr, flush=True)
                     sync_by_date = False
         if not sync_by_date:
@@ -178,6 +178,13 @@ class Feed():
             with open(session.data_filename, 'w') as configfile:
                 session.feeds.write(configfile)
         else:
+            if session.feeds[name]["date_info"] == "not available":
+                print(("Either this feed has changed, or greg has improved, "
+                       "but we can now parse its time information. "
+                       "This is good, but it also means that (just this "
+                       "time) it's possible that you have missed some entries. "
+                       "You might do a 'greg check -f {}' to make sure that "
+                       "you're not missing out on anything.").format(name))
             session.feeds[name]["date_info"] = "available"
             with open(session.data_filename, 'w') as configfile:
                 session.feeds.write(configfile)
