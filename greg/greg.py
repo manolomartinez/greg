@@ -68,6 +68,9 @@ class Session():
         return feeds.sections()
 
     def retrieve_config_file(self):
+        """
+        Retrieve config file
+        """
         try:
             if self.args["configfile"]:
                 return self.args["configfile"]
@@ -78,8 +81,8 @@ class Session():
     def retrieve_data_directory(self):
         """
         Retrieve the data directory
-        (looks first into config_filename_global
-        then into config_filename_user. The latter takes preeminence)
+        Look first into config_filename_global
+        then into config_filename_user. The latter takes preeminence.
         """
         args = self.args
         try:
@@ -105,7 +108,7 @@ class Feed():
         self.config = self.session.config
         self.name = feed
         if not podcast:
-            self.podcast = feedparser.parse(session.feeds[feed]["url"])
+            self.podcast = parse_podcast(session.feeds[feed]["url"])
         else:
             self.podcast = podcast
         self.sync_by_date = self.has_date()
@@ -307,6 +310,21 @@ def ensure_dir(dirname):
         if not os.path.isdir(dirname):
             raise
 
+def parse_podcast(url):
+    """
+    Try to parse podcast
+    """
+    try:
+        podcast = feedparser.parse(url)
+        wentwrong = "urlopen" in str(podcast["bozo_exception"])
+    except KeyError:
+        wentwrong = False
+    if wentwrong:
+        sys.exit(("I cannot check that podcast now."
+                 "You are probably not connected to the internet."))
+    return podcast
+
+
 def htmltotext(data):
     if beautifulsoupexists:
         beautify = BeautifulSoup(data)
@@ -315,9 +333,12 @@ def htmltotext(data):
         sanitizeddata = data
     return sanitizeddata
 
+
 def check_directory(placeholders):
-    # Find out, and create if needed,
-    # the directory in which the feed will be downloaded
+    """
+    Find out, and create if needed,
+    the directory in which the feed will be downloaded
+    """
     feed = placeholders.feed
     args = feed.args
     placeholders.directory = "This very directory"  # wink, wink
@@ -348,7 +369,9 @@ def check_directory(placeholders):
 
 
 def parse_for_download(args):
-    # Turns an argument such as 4, 6-8, 10 into a list such as [4,6,7,8,10]
+    """
+    Turn an argument such as 4, 6-8, 10 into a list such as [4,6,7,8,10]
+    """
     single_arg = ""
     # in the first bit we put all arguments
     # together and take out any extra spaces
@@ -367,7 +390,9 @@ def parse_for_download(args):
 
 
 def tag(placeholders):
-    # Tags the file at podpath with the information in podcast and entry
+    """
+    Tag the file at podpath with the information in podcast and entry
+    """
     # We first recover the name of the file to be tagged...
     template = placeholders.feed.retrieve_config("file_to_tag", "{filename}")
     filename = substitute_placeholders(template, placeholders, "normal")
@@ -687,14 +712,7 @@ def check(args):
             name = args["feed"]
         except KeyError:
             sys.exit("You don't appear to have a feed with that name.")
-    try:
-        podcast = feedparser.parse(url)
-        wentwrong = "urlopen" in str(podcast["bozo_exception"])
-    except KeyError:
-        wentwrong = False
-    if wentwrong:
-        sys.exit("I cannot check that podcast now.\
-                 You are probably not connected to the internet.")
+    podcast = parse_podcast(url)
     for entry in enumerate(podcast.entries):
         listentry = list(entry)
         print(listentry[0], end=": ")
