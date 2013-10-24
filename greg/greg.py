@@ -23,6 +23,8 @@ import subprocess
 import sys
 import time
 import re
+import unicodedata
+import string
 from itertools import filterfalse
 from urllib.request import urlretrieve
 from urllib.parse import urlparse
@@ -37,6 +39,11 @@ try:  # Stagger is an optional dependency
 except ImportError:
     staggerexists = False
 
+try:  # beautifulsoup4 is an optional dependency
+    from bs4 import BeautifulSoup
+    beautifulsoupexists = True
+except ImportError:
+    beautifulsoupexists = False
 
 config_filename_global = '/etc/greg.conf'
 
@@ -156,12 +163,16 @@ class Feed():
             try:
                 test = podcast.feed.updated_parsed
                 sync_by_date = True
-            except AttributeError:  # Otherwise, we use download links.
-                print(
-                    "I cannot parse the time information of this feed.\
-                    I'll use your current local time instead.",
-                    file=sys.stderr, flush=True)
-                sync_by_date = False
+            except AttributeError:
+                try:
+                    test = podcast.entries[0].published_parsed
+                    sync_by_date = True
+                except (AttributeError, IndexError):  # Otherwise, we use download links.
+                    print(
+                            "I cannot parse the time information of this feed.\
+                                    I'll use your current local time instead.",
+                                    file=sys.stderr, flush=True)
+                    sync_by_date = False
         if not sync_by_date:
             session.feeds[name]["date_info"] = "not available"
             with open(session.data_filename, 'w') as configfile:
@@ -209,7 +220,7 @@ class Feed():
 
 
 class Placeholders():
-    def __init__(self, feed, link, filename, title):
+    def __init__(self, feed, link, filename, title, summary):
         self.feed = feed
         self.link = link
         self.filename = filename
@@ -220,6 +231,13 @@ class Placeholders():
             self.podcasttitle = feed.podcast.title
         except AttributeError:
             self.podcasttitle = feed.name
+        try:
+            self.sanitizedsubtitle = htmltotext(feed.podcast.feed.subtitle)
+            if self.sanitizedsubtitle == "":
+                self.sanitizedsubtitle = "No description"
+        except AttributeError:
+            self.sanitizedsubtitle = "No description"
+        self.entrysummary = summary
         self.filename_podcasttitle = sanitize(self.podcasttitle)
         self.name = feed.name
         self.date = tuple(feed.linkdate)
@@ -255,10 +273,12 @@ feedparser.registerDateHandler(FeedburnerDateHandler)
 
 # The following are some auxiliary functions
 
-def sanitize(string):
-    sanestring = ''.join([x if x.isalnum() else "_" for x in string])
+def sanitize(data):
+#    sanestring = ''.join([x if x.isalnum() else "_" for x in string])
+    sanestring = ''.join(x if x.isalnum() else "_" for x in
+            unicodedata.normalize('NFKD', data) if x in
+        string.printable)
     return sanestring
-
 
 def ensure_dir(dirname):
     try:
@@ -267,6 +287,13 @@ def ensure_dir(dirname):
         if not os.path.isdir(dirname):
             raise
 
+def htmltotext(data):
+    if beautifulsoupexists:
+        beautify = BeautifulSoup(data)
+        sanitizeddata = beautify.get_text()
+    else:
+        sanitizeddata = data
+    return sanitizeddata
 
 def check_directory(placeholders):
     # Find out, and create if needed,
@@ -396,8 +423,15 @@ def download_entry(feed, entry):
             except:
                 title = podname
             try:
+                sanitizedsummary = htmltotext(entry.summary)
+                if sanitizedsummary == "":
+                    sanitizedsummary = "No summary available"
+            except:
+                sanitizedsummary = "No summary available"
+            try:
                 placeholders = Placeholders(
-                    feed, downloadlinks[podname], podname, title)
+                    feed, downloadlinks[podname], podname, title,
+                    sanitizedsummary)
                 placeholders = check_directory(placeholders)
                 condition = filtercond(placeholders)
                 if condition:
@@ -416,7 +450,6 @@ def download_entry(feed, entry):
             except URLError:
                 sys.exit("... something went wrong.\
                          Are you sure you are connected to the internet?")
-
 
 def parse_feed_info(info):
     entrylinks = []
@@ -444,7 +477,8 @@ def substitute_placeholders(string, placeholders, mode):
                               date=placeholders.date_string(),
                               podcasttitle=placeholders.podcasttitle,
                               filename_podcasttitle=placeholders.filename_podcasttitle,
-                              name=placeholders.name)
+                              name=placeholders.name, subtitle=placeholders.sanitizedsubtitle,
+                              entrysummary=placeholders.entrysummary)
 
     if mode == "normal":
         newst = string.format(link=shlex.quote(placeholders.link),
@@ -459,7 +493,9 @@ def substitute_placeholders(string, placeholders, mode):
                                   placeholders.podcasttitle),
                               filename_podcasttitle=shlex.quote(
                                   placeholders.filename_podcasttitle),
-                              name=shlex.quote(placeholders.name))
+                              name=shlex.quote(placeholders.name),
+                              subtitle=shlex.quote(placeholders.sanitizedsubtitle),
+                              entrysummary=shlex.quote(placeholders.entrysummary))
     return newst
 
 # The following are the functions that correspond to the different commands
