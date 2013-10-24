@@ -121,11 +121,13 @@ class Feed():
         self.entrylinks, self.linkdates = parse_feed_info(self.info)
 
     def retrieve_config(self, value, default):
-        # Retrieves a value (with a certain fallback) from the config files
-        # (looks first into config_filename_global
-        # then into config_filename_user. The latest takes preeminence)
-        # if the command line flag for the value is use,
-        # that overrides everything else
+        """
+        Retrieves a value (with a certain fallback) from the config files
+        (looks first into config_filename_global
+        then into config_filename_user. The latest takes preeminence)
+        if the command line flag for the value is use,
+        that overrides everything else
+        """
         args = self.args
         name = self.name
         try:
@@ -147,14 +149,16 @@ class Feed():
         return dict(tags)
 
     def retrieve_download_path(self):
-        # Retrieves the download path (looks first into config_filename_global
-        # then into the [DEFAULT], then the [feed], section of
-        # config_filename_user. The latest takes preeminence)
+        """
+        Retrieves the download path (looks first into config_filename_global
+        then into the [DEFAULT], then the [feed], section of
+        config_filename_user. The latest takes preeminence)
+        """
         section = self.name if self.config.has_section(
             self.name) else self.config.default_section
-        download_path = config.get(
+        download_path = self.config.get(
             section, 'Download directory', fallback='~/Podcasts')
-        subdirectory = config.get(
+        subdirectory = self.config.get(
             section, 'Create subdirectories', fallback='no')
         return [os.path.expanduser(download_path), subdirectory]
 
@@ -196,7 +200,10 @@ class Feed():
                 session.feeds.write(configfile)
         return sync_by_date
 
-    def will_tag(self):  # Checks whether the feed should be tagged
+    def will_tag(self):
+        """
+        Check whether the feed should be tagged
+        """
         wanttags = self.retrieve_config('Tag', 'no')
         if wanttags == 'yes':
             if staggerexists:
@@ -624,6 +631,9 @@ def list_for_user(args):
 
 
 def sync(args):
+    """
+    Implement the 'greg sync' command
+    """
     session = Session(args)
     if "all" in args["names"]:
         targetfeeds = session.list_feeds()
@@ -664,6 +674,9 @@ def sync(args):
 
 
 def check(args):
+    """
+    Implement the 'greg check' command
+    """
     session = Session(args)
     if str(args["url"]) != 'None':
         url = args["url"]
