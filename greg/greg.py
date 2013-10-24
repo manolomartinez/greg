@@ -59,12 +59,18 @@ class Session():
         self.config = configparser.ConfigParser()
         self.config.read([config_filename_global, self.config_filename_user])
 
-    def list_feeds(self):  # Outputs a list of all feed names
+    def list_feeds(self):
+        """
+        Output a list of all feed names
+        """
         feeds = configparser.ConfigParser()
         feeds.read(self.data_filename)
         return feeds.sections()
 
     def retrieve_config_file(self):
+        """
+        Retrieve config file
+        """
         try:
             if self.args["configfile"]:
                 return self.args["configfile"]
@@ -72,9 +78,12 @@ class Session():
             pass
         return os.path.expanduser('~/.config/greg/greg.conf')
 
-    def retrieve_data_directory(self):  # Retrieves the data directory
-        # (looks first into config_filename_global
-        # then into config_filename_user. The latest takes preeminence)
+    def retrieve_data_directory(self):
+        """
+        Retrieve the data directory
+        Look first into config_filename_global
+        then into config_filename_user. The latter takes preeminence.
+        """
         args = self.args
         try:
             if args['datadirectory']:
@@ -99,7 +108,7 @@ class Feed():
         self.config = self.session.config
         self.name = feed
         if not podcast:
-            self.podcast = feedparser.parse(session.feeds[feed]["url"])
+            self.podcast = parse_podcast(session.feeds[feed]["url"])
         else:
             self.podcast = podcast
         self.sync_by_date = self.has_date()
@@ -115,11 +124,13 @@ class Feed():
         self.entrylinks, self.linkdates = parse_feed_info(self.info)
 
     def retrieve_config(self, value, default):
-        # Retrieves a value (with a certain fallback) from the config files
-        # (looks first into config_filename_global
-        # then into config_filename_user. The latest takes preeminence)
-        # if the command line flag for the value is use,
-        # that overrides everything else
+        """
+        Retrieves a value (with a certain fallback) from the config files
+        (looks first into config_filename_global
+        then into config_filename_user. The latest takes preeminence)
+        if the command line flag for the value is use,
+        that overrides everything else
+        """
         args = self.args
         name = self.name
         try:
@@ -141,14 +152,16 @@ class Feed():
         return dict(tags)
 
     def retrieve_download_path(self):
-        # Retrieves the download path (looks first into config_filename_global
-        # then into the [DEFAULT], then the [feed], section of
-        # config_filename_user. The latest takes preeminence)
+        """
+        Retrieves the download path (looks first into config_filename_global
+        then into the [DEFAULT], then the [feed], section of
+        config_filename_user. The latest takes preeminence)
+        """
         section = self.name if self.config.has_section(
             self.name) else self.config.default_section
-        download_path = config.get(
+        download_path = self.config.get(
             section, 'Download directory', fallback='~/Podcasts')
-        subdirectory = config.get(
+        subdirectory = self.config.get(
             section, 'Create subdirectories', fallback='no')
         return [os.path.expanduser(download_path), subdirectory]
 
@@ -167,10 +180,10 @@ class Feed():
                 try:
                     test = podcast.entries[0].published_parsed
                     sync_by_date = True
-                except (AttributeError, IndexError):  # Otherwise, we use download links.
-                    print(
-                            "I cannot parse the time information of this feed.\
-                                    I'll use your current local time instead.",
+                except (AttributeError, IndexError):
+                    # Otherwise, we use download links.
+                    print(("I cannot parse the time information of this feed."
+                           "I'll use your current local time instead."),
                                     file=sys.stderr, flush=True)
                     sync_by_date = False
         if not sync_by_date:
@@ -178,21 +191,31 @@ class Feed():
             with open(session.data_filename, 'w') as configfile:
                 session.feeds.write(configfile)
         else:
+            if session.feeds[name]["date_info"] == "not available":
+                print(("Either this feed has changed, or greg has improved, "
+                       "but we can now parse its time information. "
+                       "This is good, but it also means that (just this "
+                       "time) it's possible that you have missed some entries. "
+                       "You might do a 'greg check -f {}' to make sure that "
+                       "you're not missing out on anything.").format(name))
             session.feeds[name]["date_info"] = "available"
             with open(session.data_filename, 'w') as configfile:
                 session.feeds.write(configfile)
         return sync_by_date
 
-    def will_tag(self):  # Checks whether the feed should be tagged
+    def will_tag(self):
+        """
+        Check whether the feed should be tagged
+        """
         wanttags = self.retrieve_config('Tag', 'no')
         if wanttags == 'yes':
             if staggerexists:
                 willtag = True
             else:
                 willtag = False
-                print("You want me to tag {0}, but you have not installed the\
-                      Stagger module. I cannot honour your request.".
-                      format(feed), file=sys.stderr, flush=True)
+                print(("You want me to tag {0}, but you have not installed the "
+                      "Stagger module. I cannot honour your request.").
+                      format(self.name), file=sys.stderr, flush=True)
         else:
             willtag = False
         return willtag
@@ -287,6 +310,21 @@ def ensure_dir(dirname):
         if not os.path.isdir(dirname):
             raise
 
+def parse_podcast(url):
+    """
+    Try to parse podcast
+    """
+    try:
+        podcast = feedparser.parse(url)
+        wentwrong = "urlopen" in str(podcast["bozo_exception"])
+    except KeyError:
+        wentwrong = False
+    if wentwrong:
+        sys.exit(("I cannot check podcasts now."
+                 "Are you connected to the internet?"))
+    return podcast
+
+
 def htmltotext(data):
     if beautifulsoupexists:
         beautify = BeautifulSoup(data)
@@ -295,9 +333,12 @@ def htmltotext(data):
         sanitizeddata = data
     return sanitizeddata
 
+
 def check_directory(placeholders):
-    # Find out, and create if needed,
-    # the directory in which the feed will be downloaded
+    """
+    Find out, and create if needed,
+    the directory in which the feed will be downloaded
+    """
     feed = placeholders.feed
     args = feed.args
     placeholders.directory = "This very directory"  # wink, wink
@@ -328,7 +369,9 @@ def check_directory(placeholders):
 
 
 def parse_for_download(args):
-    # Turns an argument such as 4, 6-8, 10 into a list such as [4,6,7,8,10]
+    """
+    Turn an argument such as 4, 6-8, 10 into a list such as [4,6,7,8,10]
+    """
     single_arg = ""
     # in the first bit we put all arguments
     # together and take out any extra spaces
@@ -347,7 +390,9 @@ def parse_for_download(args):
 
 
 def tag(placeholders):
-    # Tags the file at podpath with the information in podcast and entry
+    """
+    Tag the file at podpath with the information in podcast and entry
+    """
     # We first recover the name of the file to be tagged...
     template = placeholders.feed.retrieve_config("file_to_tag", "{filename}")
     filename = substitute_placeholders(template, placeholders, "normal")
@@ -448,8 +493,8 @@ def download_entry(feed, entry):
                 else:
                     print("Skipping {} -- {}".format(title, podname))
             except URLError:
-                sys.exit("... something went wrong.\
-                         Are you sure you are connected to the internet?")
+                sys.exit(("... something went wrong."
+                         "Are you connected to the internet?"))
 
 def parse_feed_info(info):
     entrylinks = []
@@ -507,8 +552,8 @@ def add(args):  # Adds a new feed
         sys.exit("You already have a feed with that name.")
     if args["name"] in ["all", "DEFAULT"]:
         sys.exit(
-            "greg uses ""{}"" for a special purpose.\
-            Please choose another name for your feed.".format(args["name"]))
+            ("greg uses ""{}"" for a special purpose."
+            "Please choose another name for your feed.").format(args["name"]))
     entry = {}
     for key, value in args.items():
         if value is not None and key != "func" and key != "name":
@@ -539,9 +584,9 @@ def edit(args):  # Edits the information associated with a certain feed
                     session.feeds.write(configfile)
                 dateinfo = False  # provisionally
             if dateinfo:
-                print("{} has no date information that I can use.\
-                      Using --downloadfrom might not have the\
-                      results that you expect.".
+                print(("{} has no date information that I can use."
+                      "Using --downloadfrom might not have the"
+                      "results that you expect.").
                       format(args["name"]), file=sys.stderr, flush=True)
             line = ' '.join(["currentdate", str(value), "\n"])
             # A dummy entry with the right date, in case we need it.
@@ -565,8 +610,8 @@ def remove(args):  # Removes a certain feed
     session = Session(args)
     if not(args["name"] in session.feeds):
         sys.exit("You don't have a feed with that name.")
-    inputtext = "Are you sure you want to remove the {}\
-            feed? (y/N) ".format(args["name"])
+    inputtext = ("Are you sure you want to remove the {}"
+            "feed? (y/N) ").format(args["name"])
     reply = input(inputtext)
     if reply != "y" and reply != "Y":
         return 0
@@ -611,6 +656,9 @@ def list_for_user(args):
 
 
 def sync(args):
+    """
+    Implement the 'greg sync' command
+    """
     session = Session(args)
     if "all" in args["names"]:
         targetfeeds = session.list_feeds()
@@ -651,6 +699,9 @@ def sync(args):
 
 
 def check(args):
+    """
+    Implement the 'greg check' command
+    """
     session = Session(args)
     if str(args["url"]) != 'None':
         url = args["url"]
@@ -661,14 +712,7 @@ def check(args):
             name = args["feed"]
         except KeyError:
             sys.exit("You don't appear to have a feed with that name.")
-    try:
-        podcast = feedparser.parse(url)
-        wentwrong = "urlopen" in str(podcast["bozo_exception"])
-    except KeyError:
-        wentwrong = False
-    if wentwrong:
-        sys.exit("I cannot check that podcast now.\
-                 You are probably not connected to the internet.")
+    podcast = parse_podcast(url)
     for entry in enumerate(podcast.entries):
         listentry = list(entry)
         print(listentry[0], end=": ")
@@ -696,16 +740,16 @@ def download(args):
     dumpfilename = os.path.join(session.data_dir, 'feeddump')
     if not(os.path.isfile(dumpfilename)):
         sys.exit(
-            "You need to run ""greg check\
-            <feed>"" before using ""greg download"".")
+            ("You need to run ""greg check"
+            "<feed>"" before using ""greg download""."))
     with open(dumpfilename, mode='rb') as dumpfile:
         dump = pickle.load(dumpfile)
     try:
         feed = Feed(session, dump[0], dump[1])
     except Exception:
-        sys.exit(
-            "... something went wrong.\
-            Are you sure your last check went well?")
+        sys.exit((
+            "... something went wrong."
+            "Are you sure your last check went well?"))
     for number in issues:
         entry = dump[1].entries[eval(number)]
         feed.info = []
