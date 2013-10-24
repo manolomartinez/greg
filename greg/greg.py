@@ -59,7 +59,10 @@ class Session():
         self.config = configparser.ConfigParser()
         self.config.read([config_filename_global, self.config_filename_user])
 
-    def list_feeds(self):  # Outputs a list of all feed names
+    def list_feeds(self):
+        """
+        Output a list of all feed names
+        """
         feeds = configparser.ConfigParser()
         feeds.read(self.data_filename)
         return feeds.sections()
@@ -72,9 +75,12 @@ class Session():
             pass
         return os.path.expanduser('~/.config/greg/greg.conf')
 
-    def retrieve_data_directory(self):  # Retrieves the data directory
-        # (looks first into config_filename_global
-        # then into config_filename_user. The latest takes preeminence)
+    def retrieve_data_directory(self):
+        """
+        Retrieve the data directory
+        (looks first into config_filename_global
+        then into config_filename_user. The latter takes preeminence)
+        """
         args = self.args
         try:
             if args['datadirectory']:
