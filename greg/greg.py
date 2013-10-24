@@ -321,7 +321,7 @@ def parse_podcast(url):
         wentwrong = False
     if wentwrong:
         sys.exit(("I cannot check podcasts now."
-                 "You are probably not connected to the internet."))
+                 "Are you connected to the internet?"))
     return podcast
 
 
@@ -494,7 +494,7 @@ def download_entry(feed, entry):
                     print("Skipping {} -- {}".format(title, podname))
             except URLError:
                 sys.exit(("... something went wrong."
-                         "Are you sure you are connected to the internet?"))
+                         "Are you connected to the internet?"))
 
 def parse_feed_info(info):
     entrylinks = []
