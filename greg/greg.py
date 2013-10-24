@@ -468,8 +468,8 @@ def download_entry(feed, entry):
                 else:
                     print("Skipping {} -- {}".format(title, podname))
             except URLError:
-                sys.exit("... something went wrong.\
-                         Are you sure you are connected to the internet?")
+                sys.exit(("... something went wrong."
+                         "Are you sure you are connected to the internet?"))
 
 def parse_feed_info(info):
     entrylinks = []
@@ -527,8 +527,8 @@ def add(args):  # Adds a new feed
         sys.exit("You already have a feed with that name.")
     if args["name"] in ["all", "DEFAULT"]:
         sys.exit(
-            "greg uses ""{}"" for a special purpose.\
-            Please choose another name for your feed.".format(args["name"]))
+            ("greg uses ""{}"" for a special purpose."
+            "Please choose another name for your feed.").format(args["name"]))
     entry = {}
     for key, value in args.items():
         if value is not None and key != "func" and key != "name":
@@ -559,9 +559,9 @@ def edit(args):  # Edits the information associated with a certain feed
                     session.feeds.write(configfile)
                 dateinfo = False  # provisionally
             if dateinfo:
-                print("{} has no date information that I can use.\
-                      Using --downloadfrom might not have the\
-                      results that you expect.".
+                print(("{} has no date information that I can use."
+                      "Using --downloadfrom might not have the"
+                      "results that you expect.").
                       format(args["name"]), file=sys.stderr, flush=True)
             line = ' '.join(["currentdate", str(value), "\n"])
             # A dummy entry with the right date, in case we need it.
@@ -585,8 +585,8 @@ def remove(args):  # Removes a certain feed
     session = Session(args)
     if not(args["name"] in session.feeds):
         sys.exit("You don't have a feed with that name.")
-    inputtext = "Are you sure you want to remove the {}\
-            feed? (y/N) ".format(args["name"])
+    inputtext = ("Are you sure you want to remove the {}"
+            "feed? (y/N) ").format(args["name"])
     reply = input(inputtext)
     if reply != "y" and reply != "Y":
         return 0
@@ -722,16 +722,16 @@ def download(args):
     dumpfilename = os.path.join(session.data_dir, 'feeddump')
     if not(os.path.isfile(dumpfilename)):
         sys.exit(
-            "You need to run ""greg check\
-            <feed>"" before using ""greg download"".")
+            ("You need to run ""greg check"
+            "<feed>"" before using ""greg download""."))
     with open(dumpfilename, mode='rb') as dumpfile:
         dump = pickle.load(dumpfile)
     try:
         feed = Feed(session, dump[0], dump[1])
     except Exception:
-        sys.exit(
-            "... something went wrong.\
-            Are you sure your last check went well?")
+        sys.exit((
+            "... something went wrong."
+            "Are you sure your last check went well?"))
     for number in issues:
         entry = dump[1].entries[eval(number)]
         feed.info = []
