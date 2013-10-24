@@ -320,7 +320,7 @@ def parse_podcast(url):
     except KeyError:
         wentwrong = False
     if wentwrong:
-        sys.exit(("I cannot check that podcast now."
+        sys.exit(("I cannot check podcasts now."
                  "You are probably not connected to the internet."))
     return podcast
 
