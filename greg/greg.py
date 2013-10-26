@@ -102,6 +102,9 @@ class Session():
 
 
 class Feed():
+    """
+    Calculate info about the current feed
+    """
     def __init__(self, session, feed, podcast):
         self.session = session
         self.args = session.args
@@ -220,7 +223,10 @@ class Feed():
             willtag = False
         return willtag
 
-    def how_many(self):  # Where to start downloading, and how many.
+    def how_many(self):
+        """
+        Ascertain where to start downloading, and how many entries.
+        """
         if self.linkdates != []:
             currentdate = max(self.linkdates)
             stop = 10 ^ 6
@@ -234,6 +240,20 @@ class Feed():
             else:
                 stop = int(firstsync)
         return currentdate, stop
+
+    def fix_linkdate(self, entry):
+        """
+        Give a date for the entry, depending on feed.sync_by_date
+        Save it as feed.linkdate
+        """
+        if self.sync_by_date:
+            try:
+                self.linkdate = list(entry.published_parsed)
+            except AttributeError:
+                self.linkdate = list(entry.updated_parsed)
+        else:
+            self.linkdate = list(time.localtime())
+
 
     def retrieve_mime(self):  # Checks the mime-type to download
         mime = self.retrieve_config('mime', 'audio')
@@ -486,8 +506,8 @@ def download_entry(feed, entry):
                         tag(placeholders)
                     if feed.info:
                         with open(feed.info, 'a') as current:
-                            # We write to file this often to ensure that downloaded
-                            # entries count as downloaded.
+                            # We write to file this often to ensure that
+                            # downloaded entries count as downloaded.
                             current.write(''.join([podname, ' ',
                                                    str(feed.linkdate), '\n']))
                 else:
@@ -681,13 +701,7 @@ def sync(args):
             currentdate, stop = feed.how_many()
             entrycounter = 0
             for entry in feed.podcast.entries:
-                if feed.sync_by_date:
-                    try:
-                        feed.linkdate = list(entry.published_parsed)
-                    except AttributeError:
-                        feed.linkdate = list(entry.updated_parsed)
-                else:
-                    feed.linkdate = list(time.localtime())
+                feed.fix_linkdate(entry)
                 if feed.linkdate > currentdate and entrycounter < stop:
                     download_entry(feed, entry)
                 entrycounter += 1
@@ -754,5 +768,5 @@ def download(args):
         entry = dump[1].entries[eval(number)]
         feed.info = []
         feed.entrylinks = []
-        feed.linkdate = list(time.localtime())
+        feed.fix_linkdate(entry)
         download_entry(feed, entry)
