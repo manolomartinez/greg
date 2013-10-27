@@ -103,7 +103,7 @@ class Session():
 
 class Feed():
     """
-    Calculate info about the current feed
+    Calculate information about the current feed
     """
     def __init__(self, session, feed, podcast):
         self.session = session
@@ -516,11 +516,15 @@ def download_entry(feed, entry):
                 sys.exit(("... something went wrong."
                          "Are you connected to the internet?"))
 
-def parse_feed_info(info):
+def parse_feed_info(infofile):
+    """
+    Take a feed file in .local/share/greg/data and return a list of links and
+    of dates
+    """
     entrylinks = []
     linkdates = []
     try:
-        with open(info, 'r') as previous:
+        with open(infofile, 'r') as previous:
             for line in previous:
                 entrylinks.append(line.split(sep=' ')[0])
                 # This is the list of already downloaded entry links
@@ -746,6 +750,9 @@ def check(args):
 
 
 def download(args):
+    """
+    Implement the 'greg download' command
+    """
     session = Session(args)
     issues = parse_for_download(args)
     if issues == ['']:
@@ -763,7 +770,7 @@ def download(args):
     except Exception:
         sys.exit((
             "... something went wrong."
-            "Are you sure your last check went well?"))
+            "Are you sure your last ""greg check"" went well?"))
     for number in issues:
         entry = dump[1].entries[eval(number)]
         feed.info = []
