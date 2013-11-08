@@ -268,9 +268,9 @@ class Feed():
         """
         Find entry link and download entry
         """
+        downloadlinks = {}
         ignoreenclosures = self.retrieve_config('ignoreenclosures', 'no')
         if ignoreenclosures == 'no':
-            downloadlinks = {}
             for enclosure in entry.enclosures:
                 # We will download all enclosures of the desired mime-type
                 if any([mimetype in enclosure["type"] for mimetype in self.mime]):
