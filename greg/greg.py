@@ -255,11 +255,64 @@ class Feed():
             self.linkdate = list(time.localtime())
 
 
-    def retrieve_mime(self):  # Checks the mime-type to download
+    def retrieve_mime(self):  
+        """
+        Check the mime-type to download
+        """
         mime = self.retrieve_config('mime', 'audio')
         mimedict = {"number": mime}
         # the input that parse_for_download expects
         return parse_for_download(mimedict)
+
+    def download_entry(self, entry):
+        """
+        Find entry link and download entry
+        """
+        ignoreenclosures = self.retrieve_config('ignoreenclosures', 'no')
+        if ignoreenclosures == 'no':
+            downloadlinks = {}
+            for enclosure in entry.enclosures:
+                # We will download all enclosures of the desired mime-type
+                if any([mimetype in enclosure["type"] for mimetype in self.mime]):
+                    downloadlinks[urlparse(
+                        enclosure["href"]).path.split("/")[-1]] = enclosure["href"]
+                    # preserve original name
+        else:
+            downloadlinks[urlparse(entry.link).query.split("=")[1]] = entry.link
+        for podname in downloadlinks:
+            if podname not in self.entrylinks:
+                try:
+                    title = entry.title
+                except:
+                    title = podname
+                try:
+                    sanitizedsummary = htmltotext(entry.summary)
+                    if sanitizedsummary == "":
+                        sanitizedsummary = "No summary available"
+                except:
+                    sanitizedsummary = "No summary available"
+                try:
+                    placeholders = Placeholders(
+                        self, downloadlinks[podname], podname, title,
+                        sanitizedsummary)
+                    placeholders = check_directory(placeholders)
+                    condition = filtercond(placeholders)
+                    if condition:
+                        print("Downloading {} -- {}".format(title, podname))
+                        download_handler(self, placeholders)
+                        if self.willtag:
+                            tag(placeholders)
+                        if self.info:
+                            with open(self.info, 'a') as current:
+                                # We write to file this often to ensure that
+                                # downloaded entries count as downloaded.
+                                current.write(''.join([podname, ' ',
+                                                       str(self.linkdate), '\n']))
+                    else:
+                        print("Skipping {} -- {}".format(title, podname))
+                except URLError:
+                    sys.exit(("... something went wrong."
+                             "Are you connected to the internet?"))
 
 
 class Placeholders():
@@ -473,49 +526,6 @@ def download_handler(feed, placeholders):
         subprocess.call(instructionlist)
 
 
-def download_entry(feed, entry):
-    downloadlinks = {}
-    for enclosure in entry.enclosures:
-        # We will download all enclosures of the desired mime-type
-        if any([mimetype in enclosure["type"] for mimetype in feed.mime]):
-            downloadlinks[urlparse(
-                enclosure["href"]).path.split("/")[-1]] = enclosure["href"]
-            # preserve original name
-    for podname in downloadlinks:
-        if podname not in feed.entrylinks:
-            try:
-                title = entry.title
-            except:
-                title = podname
-            try:
-                sanitizedsummary = htmltotext(entry.summary)
-                if sanitizedsummary == "":
-                    sanitizedsummary = "No summary available"
-            except:
-                sanitizedsummary = "No summary available"
-            try:
-                placeholders = Placeholders(
-                    feed, downloadlinks[podname], podname, title,
-                    sanitizedsummary)
-                placeholders = check_directory(placeholders)
-                condition = filtercond(placeholders)
-                if condition:
-                    print("Downloading {} -- {}".format(title, podname))
-                    download_handler(feed, placeholders)
-                    if feed.willtag:
-                        tag(placeholders)
-                    if feed.info:
-                        with open(feed.info, 'a') as current:
-                            # We write to file this often to ensure that
-                            # downloaded entries count as downloaded.
-                            current.write(''.join([podname, ' ',
-                                                   str(feed.linkdate), '\n']))
-                else:
-                    print("Skipping {} -- {}".format(title, podname))
-            except URLError:
-                sys.exit(("... something went wrong."
-                         "Are you connected to the internet?"))
-
 def parse_feed_info(infofile):
     """
     Take a feed file in .local/share/greg/data and return a list of links and
@@ -707,7 +717,7 @@ def sync(args):
             for entry in feed.podcast.entries:
                 feed.fix_linkdate(entry)
                 if feed.linkdate > currentdate and entrycounter < stop:
-                    download_entry(feed, entry)
+                    feed.download_entry(entry)
                 entrycounter += 1
             print("Done")
         else:
@@ -776,4 +786,4 @@ def download(args):
         feed.info = []
         feed.entrylinks = []
         feed.fix_linkdate(entry)
-        download_entry(feed, entry)
+        feed.download_entry(entry)
