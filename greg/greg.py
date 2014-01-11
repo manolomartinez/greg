@@ -194,13 +194,16 @@ class Feed():
             with open(session.data_filename, 'w') as configfile:
                 session.feeds.write(configfile)
         else:
-            if session.feeds[name]["date_info"] == "not available":
-                print(("Either this feed has changed, or greg has improved, "
-                       "but we can now parse its time information. "
-                       "This is good, but it also means that (just this "
-                       "time) it's possible that you have missed some entries. "
-                       "You might do a 'greg check -f {}' to make sure that "
-                       "you're not missing out on anything.").format(name))
+            try:
+                if session.feeds[name]["date_info"] == "not available":
+                    print(("Either this feed has changed, or greg has improved, "
+                           "but we can now parse its time information. "
+                           "This is good, but it also means that (just this "
+                           "time) it's possible that you have missed some entries. "
+                           "You might do a 'greg check -f {}' to make sure that "
+                           "you're not missing out on anything.").format(name))
+            except KeyError:
+                pass
             session.feeds[name]["date_info"] = "available"
             with open(session.data_filename, 'w') as configfile:
                 session.feeds.write(configfile)
