@@ -278,7 +278,7 @@ class Feed():
                         enclosure["href"]).path.split("/")[-1]] = enclosure["href"]
                     # preserve original name
         else:
-            downloadlinks[urlparse(entry.link).query.split("=")[-1]] = entry.link
+            downloadlinks[urlparse(entry.link).query.split("/")[-1]] = entry.link
         for podname in downloadlinks:
             if podname not in self.entrylinks:
                 try:
