@@ -331,8 +331,8 @@ feedparser.registerDateHandler(FeedburnerDateHandler)
 def sanitize(data):
 #    sanestring = ''.join([x if x.isalnum() else "_" for x in string])
     sanestring = ''.join(x if x.isalnum() else "_" for x in
-            unicodedata.normalize('NFKD', data) if x in
-        string.printable)
+                         unicodedata.normalize('NFKD', data)
+                         if x in string.printable)
     return sanestring
 
 def ensure_dir(dirname):
@@ -392,7 +392,7 @@ def check_directory(placeholders):
         subdnametemplate = feed.retrieve_config(
             "subdirectory_name", "{podcasttitle}")
         subdname = substitute_placeholders(
-            subdnametemplate, placeholders, "safe")
+            subdnametemplate, placeholders)
         placeholders.directory = os.path.join(download_path, subdname)
     ensure_dir(placeholders.directory)
     placeholders.fullpath = os.path.join(
@@ -427,7 +427,7 @@ def tag(placeholders):
     """
     # We first recover the name of the file to be tagged...
     template = placeholders.feed.retrieve_config("file_to_tag", "{filename}")
-    filename = substitute_placeholders(template, placeholders, "normal")
+    filename = substitute_placeholders(template, placeholders)
     podpath = os.path.join(placeholders.directory, filename)
     # ... and this is it
 
@@ -447,12 +447,12 @@ def tag(placeholders):
             tagdict[tag[0]] = tag[1]
     for tag in tagdict:
         metadata = substitute_placeholders(
-            tagdict[tag], placeholders, "normal")
+            tagdict[tag], placeholders)
         stagger.util.set_frames(podpath, {tag: metadata})
 
 def filtercond(placeholders):
     template = placeholders.feed.retrieve_config("filter", "True")
-    condition = substitute_placeholders(template, placeholders, "normal")
+    condition = substitute_placeholders(template, placeholders)
     return eval(condition)
 
 
@@ -478,6 +478,7 @@ def download_handler(feed, placeholders):
     Parse and execute the download handler
     """
     value = feed.retrieve_config('downloadhandler', 'greg')
+    print(value)
     if value == 'greg':
         while os.path.isfile(placeholders.fullpath):
             placeholders.fullpath = placeholders.fullpath + '_'
@@ -488,8 +489,10 @@ def download_handler(feed, placeholders):
                             part in value_list]
         subprocess.call(instruction_list)
 
-
 def download_entry(feed, entry):
+    """
+    Download all enclosures of an entry
+    """
     downloadlinks = {}
     for enclosure in entry.enclosures:
         # We will download all enclosures of the desired mime-type
@@ -568,10 +571,7 @@ def substitute_placeholders(inputstring, placeholders):
                                name=placeholders.name,
                                subtitle=placeholders.sanitizedsubtitle,
                                entrysummary=placeholders.entrysummary)
-    if newst != inputstring:
-        return shlex.quote(newst)
-    else:
-        return inputstring
+    return newst
 
 # The following are the functions that correspond to the different commands
 
