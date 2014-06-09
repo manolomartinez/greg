@@ -2,7 +2,7 @@
 
 pkgname=greg
 pkgver=0.4.0
-pkgrel=1
+pkgrel=2
 pkgdesc="A command-line podcast aggregator."
 arch=(any)
 url="https://github.com/manolomartinez/greg"
@@ -11,6 +11,7 @@ depends=('python-feedparser')
 optdepends=('python3-stagger-svn: writing metadata'
   'wget: alternative downloadhandler'
 	'aria2: alternative downloadhandler')
+makedepends=('python-setuptools')
 source=("https://github.com/manolomartinez/greg/archive/${pkgver}.tar.gz")
 md5sums=('084ca6ba5448b5e8e7b6f4e41e3ce955')
 package() {
