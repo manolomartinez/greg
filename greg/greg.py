@@ -474,15 +474,19 @@ def transition(args, feed, feeds):
 
 
 def download_handler(feed, placeholders):
+    """
+    Parse and execute the download handler
+    """
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
         while os.path.isfile(placeholders.fullpath):
             placeholders.fullpath = placeholders.fullpath + '_'
         urlretrieve(placeholders.link, placeholders.fullpath)
     else:
-        instruction = substitute_placeholders(value, placeholders, "safe")
-        instructionlist = shlex.split(instruction)
-        subprocess.call(instructionlist)
+        value_list = value.split()
+        instruction_list = [substitute_placeholders(part, placeholders) for
+                            part in value_list]
+        subprocess.call(instruction_list)
 
 
 def download_entry(feed, entry):
@@ -547,37 +551,27 @@ def parse_feed_info(infofile):
     return entrylinks, linkdates
 
 
-def substitute_placeholders(string, placeholders, mode):
-    if mode == "safe":
-        newst = string.format(link=placeholders.link,
-                              filename=placeholders.filename,
-                              directory=placeholders.directory,
-                              fullpath=placeholders.fullpath,
-                              title=placeholders.title,
-                              filename_title = placeholders.filename_title,
-                              date=placeholders.date_string(),
-                              podcasttitle=placeholders.podcasttitle,
-                              filename_podcasttitle=placeholders.filename_podcasttitle,
-                              name=placeholders.name, subtitle=placeholders.sanitizedsubtitle,
-                              entrysummary=placeholders.entrysummary)
-
-    if mode == "normal":
-        newst = string.format(link=shlex.quote(placeholders.link),
-                              filename=shlex.quote(placeholders.filename),
-                              directory=shlex.quote(placeholders.directory),
-                              fullpath=shlex.quote(placeholders.fullpath),
-                              title=shlex.quote(placeholders.title),
-                              filename_title = shlex.quote(
-                                  placeholders.filename_title),
-                              date=placeholders.date_string(),
-                              podcasttitle=shlex.quote(
-                                  placeholders.podcasttitle),
-                              filename_podcasttitle=shlex.quote(
-                                  placeholders.filename_podcasttitle),
-                              name=shlex.quote(placeholders.name),
-                              subtitle=shlex.quote(placeholders.sanitizedsubtitle),
-                              entrysummary=shlex.quote(placeholders.entrysummary))
-    return newst
+def substitute_placeholders(inputstring, placeholders):
+    """
+    Take a string with placeholders, and return the strings with substitutions.
+    """
+    newst = inputstring.format(link=placeholders.link,
+                               filename=placeholders.filename,
+                               directory=placeholders.directory,
+                               fullpath=placeholders.fullpath,
+                               title=placeholders.title,
+                               filename_title=placeholders.filename_title,
+                               date=placeholders.date_string(),
+                               podcasttitle=placeholders.podcasttitle,
+                               filename_podcasttitle=
+                               placeholders.filename_podcasttitle,
+                               name=placeholders.name,
+                               subtitle=placeholders.sanitizedsubtitle,
+                               entrysummary=placeholders.entrysummary)
+    if newst != inputstring:
+        return shlex.quote(newst)
+    else:
+        return inputstring
 
 # The following are the functions that correspond to the different commands
 
