@@ -251,17 +251,20 @@ class Feed():
         """
         if self.sync_by_date:
             try:
+                entry.linkdate = list(entry.published_parsed)
                 self.linkdate = list(entry.published_parsed)
             except AttributeError:
                 try:
+                    entry.linkdate = list(entry.updated_parsed)
                     self.linkdate = list(entry.updated_parsed)
                 except AttributeError:
                     print(("This entry doesn't seem to have a parseable date. "
                            "I will use your local time instead."),
                           file=sys.stderr, flush=True)
+                    entry.linkdate = list(time.localtime())
                     self.linkdate = list(time.localtime())
         else:
-            self.linkdate = list(time.localtime())
+            entry.linkdate = list(time.localtime())
 
 
     def retrieve_mime(self):  # Checks the mime-type to download
@@ -692,6 +695,7 @@ def sync(args):
     """
     Implement the 'greg sync' command
     """
+    import operator
     session = Session(args)
     if "all" in args["names"]:
         targetfeeds = session.list_feeds()
@@ -713,11 +717,17 @@ def sync(args):
             print("Checking", title, end="...\n")
             currentdate, stop = feed.how_many()
             entrycounter = 0
+            entries_to_download = []
             for entry in feed.podcast.entries:
                 feed.fix_linkdate(entry)
-                if feed.linkdate > currentdate and entrycounter < stop:
-                    download_entry(feed, entry)
+                if entry.linkdate > currentdate and entrycounter < stop:
+                    entries_to_download.append(entry)
                 entrycounter += 1
+            # Sort entries_to_download
+            entries_to_download.sort(key=operator.attrgetter("linkdate"),
+                                     reverse=False)
+            for entry in entries_to_download:
+                download_entry(feed, entry)
             print("Done")
         else:
             msg = ''.join(["I cannot sync ", feed,
@@ -768,10 +778,10 @@ def download(args):
         sys.exit(
             "You need to give a list of issues, of the form ""a, b-c, d...""")
     dumpfilename = os.path.join(session.data_dir, 'feeddump')
-    if not(os.path.isfile(dumpfilename)):
+    if not os.path.isfile(dumpfilename):
         sys.exit(
             ("You need to run ""greg check"
-            "<feed>"" before using ""greg download""."))
+             "<feed>"" before using ""greg download""."))
     with open(dumpfilename, mode='rb') as dumpfile:
         dump = pickle.load(dumpfile)
     try:
