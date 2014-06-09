@@ -530,7 +530,6 @@ def download_handler(feed, placeholders):
     Parse and execute the download handler
     """
     value = feed.retrieve_config('downloadhandler', 'greg')
-    print(value)
     if value == 'greg':
         while os.path.isfile(placeholders.fullpath):
             placeholders.fullpath = placeholders.fullpath + '_'
