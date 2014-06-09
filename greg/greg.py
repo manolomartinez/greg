@@ -18,7 +18,6 @@
 import configparser
 import os
 import pickle
-import shlex
 import subprocess
 import sys
 import time
