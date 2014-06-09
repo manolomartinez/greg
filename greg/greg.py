@@ -687,12 +687,15 @@ def edit(args):  # Edits the information associated with a certain feed
                     currentfile.write(line)
 
 
-def remove(args):  # Removes a certain feed
+def remove(args):
+    """
+    Remove the feed given in <args>
+    """
     session = Session(args)
-    if not(args["name"] in session.feeds):
+    if not args["name"] in session.feeds:
         sys.exit("You don't have a feed with that name.")
-    inputtext = ("Are you sure you want to remove the {}"
-            "feed? (y/N) ").format(args["name"])
+    inputtext = ("Are you sure you want to remove the {} "
+                 "feed? (y/N) ").format(args["name"])
     reply = input(inputtext)
     if reply != "y" and reply != "Y":
         return 0
