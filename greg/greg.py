@@ -765,13 +765,8 @@ def sync(args):
             entries_to_download = []
             for entry in feed.podcast.entries:
                 feed.fix_linkdate(entry)
-<<<<<<< HEAD
                 if entry.linkdate > currentdate and entrycounter < stop:
                     entries_to_download.append(entry)
-=======
-                if feed.linkdate > currentdate and entrycounter < stop:
-                    feed.download_entry(entry)
->>>>>>> 350a16d62dd9d7394515e85d5730a9a64d4f51c7
                 entrycounter += 1
             # Sort entries_to_download
             entries_to_download.sort(key=operator.attrgetter("linkdate"),
