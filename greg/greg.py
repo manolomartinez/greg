@@ -186,7 +186,7 @@ class Feed():
                     # Otherwise, we use download links.
                     print(("I cannot parse the time information of this feed."
                            "I'll use your current local time instead."),
-                                    file=sys.stderr, flush=True)
+                            file=sys.stderr, flush=True)
                     sync_by_date = False
         if not sync_by_date:
             session.feeds[name]["date_info"] = "not available"
@@ -195,8 +195,8 @@ class Feed():
         else:
             try:
                 if session.feeds[name]["date_info"] == "not available":
-                    print(("Either this feed has changed, or greg has improved, "
-                           "but we can now parse its time information. "
+                    print(("Either this feed has changed, or greg has improved,"
+                           " but we can now parse its time information. "
                            "This is good, but it also means that (just this "
                            "time) it's possible that you have missed some entries. "
                            "You might do a 'greg check -f {}' to make sure that "
@@ -219,7 +219,7 @@ class Feed():
             else:
                 willtag = False
                 print(("You want me to tag {0}, but you have not installed the "
-                      "Stagger module. I cannot honour your request.").
+                       "Stagger module. I cannot honour your request.").
                       format(self.name), file=sys.stderr, flush=True)
         else:
             willtag = False
@@ -265,8 +265,7 @@ class Feed():
         else:
             entry.linkdate = list(time.localtime())
 
-
-    def retrieve_mime(self):  
+    def retrieve_mime(self):
         """
         Check the mime-type to download
         """
@@ -284,12 +283,15 @@ class Feed():
         if ignoreenclosures == 'no':
             for enclosure in entry.enclosures:
                 # We will download all enclosures of the desired mime-type
-                if any([mimetype in enclosure["type"] for mimetype in self.mime]):
+                if any([mimetype in enclosure["type"]
+                        for mimetype in self.mime]):
                     downloadlinks[urlparse(
-                        enclosure["href"]).path.split("/")[-1]] = enclosure["href"]
+                        enclosure["href"]).path.split(
+                            "/")[-1]] = enclosure["href"]
                     # preserve original name
         else:
-            downloadlinks[urlparse(entry.link).query.split("/")[-1]] = entry.link
+            downloadlinks[urlparse(entry.link).query.split(
+                "/")[-1]] = entry.link
         for podname in downloadlinks:
             if podname not in self.entrylinks:
                 try:
@@ -304,7 +306,7 @@ class Feed():
                     sanitizedsummary = "No summary available"
                 try:
                     placeholders = Placeholders(
-                        self, downloadlinks[podname], podname, title,
+                        self, entry, downloadlinks[podname], podname, title,
                         sanitizedsummary)
                     placeholders = check_directory(placeholders)
                     condition = filtercond(placeholders)
@@ -318,7 +320,7 @@ class Feed():
                                 # We write to file this often to ensure that
                                 # downloaded entries count as downloaded.
                                 current.write(''.join([podname, ' ',
-                                                       str(self.linkdate), '\n']))
+                                              str(entry.linkdate), '\n']))
                     else:
                         print("Skipping {} -- {}".format(title, podname))
                 except URLError:
@@ -326,12 +328,12 @@ class Feed():
                              "Are you connected to the internet?"))
 
 
-class Placeholders():
-    def __init__(self, feed, link, filename, title, summary):
+class Placeholders:
+    def __init__(self, feed, entry, link, filename, title, summary):
         self.feed = feed
         self.link = link
         self.filename = filename
-        #self.fullpath = os.path.join(self.directory, self.filename)
+        # self.fullpath = os.path.join(self.directory, self.filename)
         self.title = title
         self.filename_title = sanitize(title)
         try:
@@ -347,7 +349,7 @@ class Placeholders():
         self.entrysummary = summary
         self.filename_podcasttitle = sanitize(self.podcasttitle)
         self.name = feed.name
-        self.date = tuple(feed.linkdate)
+        self.date = tuple(entry.linkdate)
 
     def date_string(self):
         date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")
@@ -380,12 +382,14 @@ feedparser.registerDateHandler(FeedburnerDateHandler)
 
 # The following are some auxiliary functions
 
+
 def sanitize(data):
-#    sanestring = ''.join([x if x.isalnum() else "_" for x in string])
+    # sanestring = ''.join([x if x.isalnum() else "_" for x in string])
     sanestring = ''.join(x if x.isalnum() else "_" for x in
                          unicodedata.normalize('NFKD', data)
                          if x in string.printable)
     return sanestring
+
 
 def ensure_dir(dirname):
     try:
@@ -393,6 +397,7 @@ def ensure_dir(dirname):
     except OSError:
         if not os.path.isdir(dirname):
             raise
+
 
 def parse_podcast(url):
     """
@@ -502,6 +507,7 @@ def tag(placeholders):
             tagdict[tag], placeholders)
         stagger.util.set_frames(podpath, {tag: metadata})
 
+
 def filtercond(placeholders):
     template = placeholders.feed.retrieve_config("filter", "True")
     condition = substitute_placeholders(template, placeholders)
@@ -540,6 +546,7 @@ def download_handler(feed, placeholders):
                             part in value_list]
         subprocess.call(instruction_list)
 
+
 def download_entry(feed, entry):
     """
     Download all enclosures of an entry
@@ -565,7 +572,7 @@ def download_entry(feed, entry):
                 sanitizedsummary = "No summary available"
             try:
                 placeholders = Placeholders(
-                    feed, downloadlinks[podname], podname, title,
+                    feed, entry, downloadlinks[podname], podname, title,
                     sanitizedsummary)
                 placeholders = check_directory(placeholders)
                 condition = filtercond(placeholders)
@@ -579,12 +586,13 @@ def download_entry(feed, entry):
                             # We write to file this often to ensure that
                             # downloaded entries count as downloaded.
                             current.write(''.join([podname, ' ',
-                                                   str(feed.linkdate), '\n']))
+                                                   str(entry.linkdate), '\n']))
                 else:
                     print("Skipping {} -- {}".format(title, podname))
             except URLError:
                 sys.exit(("... something went wrong."
                          "Are you connected to the internet?"))
+
 
 def parse_feed_info(infofile):
     """
@@ -695,7 +703,7 @@ def remove(args):
     if not args["name"] in session.feeds:
         sys.exit("You don't have a feed with that name.")
     inputtext = ("Are you sure you want to remove the {} "
-                 "feed? (y/N) ").format(args["name"])
+                 " feed? (y/N) ").format(args["name"])
     reply = input(inputtext)
     if reply != "y" and reply != "Y":
         return 0
