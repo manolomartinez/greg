@@ -532,6 +532,7 @@ def transition(args, feed, feeds):
 
 
 def download_handler(feed, placeholders):
+    import shlex
     """
     Parse and execute the download handler
     """
@@ -541,7 +542,7 @@ def download_handler(feed, placeholders):
             placeholders.fullpath = placeholders.fullpath + '_'
         urlretrieve(placeholders.link, placeholders.fullpath)
     else:
-        value_list = value.split()
+        value_list = shlex.split(value)
         instruction_list = [substitute_placeholders(part, placeholders) for
                             part in value_list]
         subprocess.call(instruction_list)
