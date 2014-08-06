@@ -744,7 +744,7 @@ def pretty_print(session, feed):
 def list_for_user(args):
     session = Session(args)
     for feed in session.list_feeds():
-        print(feed, end=" ")
+        print(feed)
     print()
 
 
