@@ -231,7 +231,7 @@ class Feed():
         """
         if self.linkdates != []:
             currentdate = max(self.linkdates)
-            stop = 10 ^ 6
+            stop = sys.maxsize
         else:
             currentdate = [1, 1, 1, 0, 0]
             firstsync = self.retrieve_config('firstsync', '1')
@@ -783,6 +783,7 @@ def sync(args):
             # Sort entries_to_download
             entries_to_download.sort(key=operator.attrgetter("linkdate"),
                                      reverse=False)
+            print(len(entries_to_download))
             for entry in entries_to_download:
                 download_entry(feed, entry)
             print("Done")
