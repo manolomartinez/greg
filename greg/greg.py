@@ -783,7 +783,6 @@ def sync(args):
             # Sort entries_to_download
             entries_to_download.sort(key=operator.attrgetter("linkdate"),
                                      reverse=False)
-            print(len(entries_to_download))
             for entry in entries_to_download:
                 download_entry(feed, entry)
             print("Done")
