@@ -74,7 +74,7 @@ If we keep it, we might want to start sync'ing from, say, the 30th of April, 201
 
 All right. Let's add a second feed:
 
-    greg add History http://feeds.feedburner.com/historyofphilosophy?format=xml
+    greg add History http://podcast.ulcc.ac.uk/accounts/kings/Philosophy_podcasts.xml
 
 If you want to keep track of the feeds you have added, you can ask Greg:
 
@@ -89,7 +89,7 @@ which returns
 
     History
     -------
-        url: http://feeds.feedburner.com/historyofphilosophy?format=xml
+        url: http://podcast.ulcc.ac.uk/accounts/kings/Philosophy_podcasts.xml
 
 Let us add another feed:
 
