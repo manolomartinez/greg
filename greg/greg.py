@@ -686,7 +686,7 @@ def edit(args):  # Edits the information associated with a certain feed
                 with open(feed_info, 'r') as previous:
                     current = list(filterfalse(
                         lambda line: value < get_date(line), previous))
-                    if current == [] and dateinfo:
+                    if not current:
                         current = [line]
                 with open(feed_info, 'w') as currentfile:
                     currentfile.writelines(current)
