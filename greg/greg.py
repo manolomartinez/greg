@@ -677,18 +677,15 @@ def edit(args):  # Edits the information associated with a certain feed
                        "results that you expect.").
                       format(args["name"]), file=sys.stderr, flush=True)
             line = ' '.join(["currentdate", str(value), "\n"])
-            # A dummy entry with the right date, in case we need it.
+            # A dummy entry with the new downloadfrom date.
             try:
                 # Remove from the feed file all entries
-                # after or equal to downloadfrom
+                # after or equal to downloadfrom, then append line
                 with open(feed_info, 'r') as previous:
-                    current = list(filterfalse(
-                        lambda line: value < get_date(line), previous))
-                    if not current or current == previous:
-                        # i.e., if current == [] (is this the Pythonic way to
-                        # put it?) or we haven't deleted anything (because the
-                        # desired date is in the future.)
-                        current.append(line)
+                    previouslist = previous.readlines()
+                    current = [aline for aline in previouslist if value >
+                               get_date(aline)]
+                    current.append(line)
                 with open(feed_info, 'w') as currentfile:
                     currentfile.writelines(current)
             except FileNotFoundError:
