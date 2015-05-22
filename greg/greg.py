@@ -237,8 +237,6 @@ class Feed():
             firstsync = self.retrieve_config('firstsync', '1')
             if firstsync == 'all':
                 stop = sys.maxsize
-                # I'm guessing no feed in the world
-                # will have more than a million entries.
             else:
                 stop = int(firstsync)
         return currentdate, stop
