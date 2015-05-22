@@ -688,8 +688,8 @@ def edit(args):  # Edits the information associated with a certain feed
                         # Pythonic thing to do?
                         current = [line]
                     if current == previous:  # i.e., we haven't deleted
-                        # anything because the desired date is in the
-                        # future.
+                        # anything (because the desired date is in the
+                        # future.)
                         current = previous.append(line)
                 with open(feed_info, 'w') as currentfile:
                     currentfile.writelines(current)
