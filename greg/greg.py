@@ -673,8 +673,8 @@ def edit(args):  # Edits the information associated with a certain feed
                 dateinfo = False  # provisionally
             if dateinfo:
                 print(("{} has no date information that I can use."
-                      "Using --downloadfrom might not have the"
-                      "results that you expect.").
+                       "Using --downloadfrom might not have the"
+                       "results that you expect.").
                       format(args["name"]), file=sys.stderr, flush=True)
             line = ' '.join(["currentdate", str(value), "\n"])
             # A dummy entry with the right date, in case we need it.
@@ -684,7 +684,7 @@ def edit(args):  # Edits the information associated with a certain feed
                 with open(feed_info, 'r') as previous:
                     current = list(filterfalse(
                         lambda line: value < get_date(line), previous))
-                    if not current or current == previous:  
+                    if not current or current == previous:
                         # i.e., if current == [] (is this the Pythonic way to
                         # put it?) or we haven't deleted anything (because the
                         # desired date is in the future.)
