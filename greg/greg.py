@@ -687,6 +687,10 @@ def edit(args):  # Edits the information associated with a certain feed
                     if not current:  # i.e., current == [], is this the
                         # Pythonic thing to do?
                         current = [line]
+                    if current == previous:  # i.e., we haven't deleted
+                        # anything because the desired date is in the
+                        # future.
+                        current = previous.append(line)
                 with open(feed_info, 'w') as currentfile:
                     currentfile.writelines(current)
             except FileNotFoundError:
