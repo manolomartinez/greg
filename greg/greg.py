@@ -29,6 +29,7 @@ from urllib.request import urlretrieve
 from urllib.parse import urlparse
 from urllib.error import URLError
 
+from pkg_resources import resource_string
 import feedparser
 
 try:  # Stagger is an optional dependency
@@ -44,7 +45,7 @@ try:  # beautifulsoup4 is an optional dependency
 except ImportError:
     beautifulsoupexists = False
 
-config_filename_global = '/etc/greg.conf'
+config_filename_global = resource_filename(__name__, 'greg.conf')
 
 
 class Session():
