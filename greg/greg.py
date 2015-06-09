@@ -634,6 +634,12 @@ def substitute_placeholders(inputstring, placeholders):
 
 # The following are the functions that correspond to the different commands
 
+def retrieveglobalconf(args):
+    """
+    Retrieve the global config path
+    """
+    print(config_filename_global)
+
 
 def add(args):  # Adds a new feed
     session = Session(args)

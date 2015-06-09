@@ -39,8 +39,10 @@ def url(string):
 
 # create the top-level parser
 parser = argparse.ArgumentParser()
-parser.add_argument('--configfile', '-cf', help='specifies the config file that greg should use')
-parser.add_argument('--datadirectory', '-dtd', help='specifies the directory where greg keeps its data')
+parser.add_argument('--configfile', '-cf',
+                    help='specifies the config file that greg should use')
+parser.add_argument('--datadirectory', '-dtd',
+                    help='specifies the directory where greg keeps its data')
 subparsers = parser.add_subparsers()
 
 # create the parser for the "add" command
@@ -96,6 +98,25 @@ parser_download.set_defaults(func=greg.greg.download)
 parser_remove = subparsers.add_parser('remove', help='removes feed(s)')
 parser_remove.add_argument('name', help='the name of the feed you want to remove')
 parser_remove.set_defaults(func=greg.greg.remove)
+
+# create the parser for the 'retrieveglobalconf' command
+parser_rgc = subparsers.add_parser('retrieveglobalconf', aliases=['rgc'],
+                                   help='retrieves the path to the global config file')
+parser_rgc.set_defaults(func=greg.greg.retrieveglobalconf)
+
+# create the parser for the 'retrieveglobalconf' command
+
+def main(): # parse the args and call whatever function was selected
+    try:
+        args = parser.parse_args(sys.argv[1:])
+        args.func(vars(args))
+    except AttributeError as err:
+        if str(err) == "\'Namespace\' object has no attribute \'func\'":
+            parser.print_help()
+        else:
+            print("Something has gone wrong: {}".format(err), file = sys.stderr, flush = True)
+    #args = parser.parse_args(sys.argv[1:])
+    #args.func(vars(args))
 
 def main(): # parse the args and call whatever function was selected
     try:
