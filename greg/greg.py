@@ -29,7 +29,7 @@ from urllib.request import urlretrieve
 from urllib.parse import urlparse
 from urllib.error import URLError
 
-from pkg_resources import resource_string
+from pkg_resources import resource_filename
 import feedparser
 
 try:  # Stagger is an optional dependency
