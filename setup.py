@@ -2,14 +2,14 @@
 from setuptools import setup
 
 kwargs = {'name': 'Greg',
-          'version':  '0.4.3.4',
+          'version':  '0.4.3.6',
           'install_requires': ['feedparser'],
           'description': 'A command-line podcast aggregator',
           'author': 'Manolo Martínez',
           'author_email': 'manolo@austrohungaro.com',
           'url': 'https://github.com/manolomartinez/greg',
           'packages': ['greg'],
-          'entry_points': {'console_scripts': ['greg = greg.gregparser.main']},
+          'entry_points': {'console_scripts': ['greg = greg.gregparser:main']},
           'package_data': {'': ['data/greg.conf']},
           'license': 'GPLv3'}
 
