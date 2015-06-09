@@ -9,7 +9,7 @@ kwargs = {'name': 'Greg',
           'author_email': 'manolo@austrohungaro.com',
           'url': 'https://github.com/manolomartinez/greg',
           'packages': ['greg'],
-          'entry_points': {'console:scripts': ['greg = greg.gregparser.main']},
+          'entry_points': {'console_scripts': ['greg = greg.gregparser.main']},
           'package_data': {'': ['data/greg.conf']},
           'license': 'GPLv3'}
 
