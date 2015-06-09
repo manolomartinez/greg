@@ -8,7 +8,7 @@ kwargs = {'name': 'Greg',
           'url': 'https://github.com/manolomartinez/greg',
           'packages': ['greg'],
           'scripts': ['bin/greg'],
-          'package_data': ['data/greg.conf'],
+          'package_data': {'': ['data/greg.conf']},
           'license': 'GPLv3'}
 
 try:
