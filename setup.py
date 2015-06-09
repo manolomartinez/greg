@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+from setuptools import setup
 
 kwargs = {'name': 'Greg',
           'version':  '0.4.3',
+          'install_requires': ['feedparser'],
           'description': 'A command-line podcast aggregator',
           'author': 'Manolo Martínez',
           'author_email': 'manolo@austrohungaro.com',
@@ -11,10 +13,4 @@ kwargs = {'name': 'Greg',
           'package_data': {'': ['data/greg.conf']},
           'license': 'GPLv3'}
 
-try:
-    from setuptools import setup
-    kwargs['install_requires'] = ['feedparser']
-    setup(**kwargs)
-except ImportError:
-    from distutils.core import setup
-    setup(**kwargs)
+setup(**kwargs)
