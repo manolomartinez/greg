@@ -547,53 +547,6 @@ def download_handler(feed, placeholders):
         subprocess.call(instruction_list)
 
 
-def download_entry(feed, entry):
-    """
-    Download all enclosures of an entry
-    """
-    downloadlinks = {}
-    for enclosure in entry.enclosures:
-        # We will download all enclosures of the desired mime-type
-        if any([mimetype in enclosure["type"] for mimetype in feed.mime]):
-            downloadlinks[urlparse(
-                enclosure["href"]).path.split("/")[-1]] = enclosure["href"]
-            # preserve original name
-    for podname in downloadlinks:
-        if podname not in feed.entrylinks:
-            try:
-                title = entry.title
-            except:
-                title = podname
-            try:
-                sanitizedsummary = htmltotext(entry.summary)
-                if sanitizedsummary == "":
-                    sanitizedsummary = "No summary available"
-            except:
-                sanitizedsummary = "No summary available"
-            try:
-                placeholders = Placeholders(
-                    feed, entry, downloadlinks[podname], podname, title,
-                    sanitizedsummary)
-                placeholders = check_directory(placeholders)
-                condition = filtercond(placeholders)
-                if condition:
-                    print("Downloading {} -- {}".format(title, podname))
-                    download_handler(feed, placeholders)
-                    if feed.willtag:
-                        tag(placeholders)
-                    if feed.info:
-                        with open(feed.info, 'a') as current:
-                            # We write to file this often to ensure that
-                            # downloaded entries count as downloaded.
-                            current.write(''.join([podname, ' ',
-                                                   str(entry.linkdate), '\n']))
-                else:
-                    print("Skipping {} -- {}".format(title, podname))
-            except URLError:
-                sys.exit(("... something went wrong."
-                         "Are you connected to the internet?"))
-
-
 def parse_feed_info(infofile):
     """
     Take a feed file in .local/share/greg/data and return a list of links and
@@ -633,6 +586,7 @@ def substitute_placeholders(inputstring, placeholders):
     return newst
 
 # The following are the functions that correspond to the different commands
+
 
 def retrieveglobalconf(args):
     """
@@ -789,7 +743,7 @@ def sync(args):
             entries_to_download.sort(key=operator.attrgetter("linkdate"),
                                      reverse=False)
             for entry in entries_to_download:
-                download_entry(feed, entry)
+                feed.download_entry(entry)
             print("Done")
         else:
             msg = ''.join(["I cannot sync ", feed,
