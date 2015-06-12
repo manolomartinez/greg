@@ -2,7 +2,7 @@
 from setuptools import setup
 
 kwargs = {'name': 'Greg',
-          'version':  '0.4.3.6',
+          'version':  '0.4.4.3',
           'install_requires': ['feedparser'],
           'description': 'A command-line podcast aggregator',
           'author': 'Manolo Martínez',
