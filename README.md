@@ -1,7 +1,9 @@
 greg
 ====
 
-A command-line podcast aggregator, written in python 3. It basically exposes some of the functionality of the excellent [feedparser](http://pypi.python.org/pypi/feedparser) -- feedparser and python are its only non-optional dependencies.
+A command-line podcast aggregator, written in python 3. It basically exposes
+some of the functionality of the excellent
+[feedparser](http://pypi.python.org/pypi/feedparser).
 
 # Usage
 
@@ -41,7 +43,8 @@ This will give you the following kind of info:
     18: Rae Langton on Hate Speech (2012-07-28T20:14:27+01:00)
     19: Molly Crockett on Brain Chemistry and Moral-Decision Making (originally on Bioethics Bites) (2012-07-22T21:14:35+01:00)
 
-Interesting stuff. We'll download a couple of episodes, just to make sure that it's really worth it:
+Interesting stuff. We'll download a couple of episodes, just to make sure that
+it's really worth it:
 
     greg download 1, 5-7
 
@@ -60,17 +63,34 @@ and Greg says
     Downloading Peter Adamson on Avicenna's Flying Man Thought Experiment -- Peter_Adamson_on_Plotinus_on_Evil.mp3
     Done
 
-As you can see, `greg download` accepts a range of episodes of the kind `a, b, c-f, h, ...`. The numbers make reference to the numbers at the beginning of each entry provided by `greg check`. `check` creates a persistent file (`feeddump` in the data directory, `~/.local/share/greg/data by default, but you can change that in the config file, or passing a different path with the `--datadirectory` flag), so `download` will keep on working, and referring to the last `check` ever done.
+As you can see, `greg download` accepts a range of episodes of the kind `a, b,
+c-f, h, ...`. The numbers make reference to the numbers at the beginning of
+each entry provided by `greg check`. `check` creates a persistent file
+(`feeddump` in the data directory, `~/.local/share/greg/data by` default, but
+you can change that in the config file, or passing a different path with the
+`--datadirectory` flag), so `download` will keep on working, and referring to
+the last `check` ever done.
 
-All of these podcasts will be downloaded to the default download directory for the feed (if you used the `-f` flag) or the general default download directory (again, `~/Podcasts` if you don't tell Greg otherwise. We'll learn how to change that soon), inside a subdirectory named after the podcast (we can change that default too.) After listening to them we decide that this podcast is well worth our time, and keep it, or we decide that it's not, and
+All of these podcasts will be downloaded to the default download directory for
+the feed (if you used the `-f` flag) or the general default download directory
+(again, `~/Podcasts` if you don't tell Greg otherwise. We'll learn how to
+change that soon), inside a subdirectory named after the podcast (we can change
+that default too.) After listening to them we decide that this podcast is well
+worth our time, and keep it, or we decide that it's not, and
 
     greg remove PhilosophyBites
 
-If we keep it, we might want to start sync'ing from, say, the 30th of April, 2013, on. So we edit the feed information
+If we keep it, we might want to start `sync`ing from, say, the 30th of April,
+2013, on. So we edit the feed information
 
     greg edit PhilosophyBites -d 2013-4-30
 
-`-d` or `--downloadfrom` change the date after which Greg should start downloading episodes when it syncs. Currently, the only two things one can `edit` in a feed are the download-from date and `--url` -- but many more things can be changed by editing the config file. `greg edit -h` will give help you with the `edit` options and syntax -- likewise for the rest of Greg subcommands.
+`-d` or `--downloadfrom` change the date after which Greg should start
+downloading episodes when it syncs. Currently, the only two things one can
+`edit` in a feed are the download-from date and `--url` -- but many more things
+can be changed by editing the config file. `greg edit -h` will give help you
+with the `edit` options and syntax -- likewise for the rest of Greg
+subcommands.
 
 All right. Let's add a second feed:
 
@@ -95,11 +115,20 @@ Let us add another feed:
 
     greg add MusicaAntigua http://www.rtve.es/api/programas/23353/audios.rss
 
-This is a great program on ancient music at the Spanish public radio. The thing is, these guys do not tag their episodes, which is bad for most portable media players. Greg uses [stagger](http://pypi.python.org/pypi/stagger/0.4.2) (as an optional dependency) to tag podcasts, if one so wishes. By default, it uses the podcast name for the *artist* tag, and the entry title for the *title* tag. To enable tagging for MusicaAntigua, copy the system-wide config file locally:
+This is a great program on ancient music at the Spanish public radio. The thing
+is, these guys do not tag their episodes, which is bad for most portable media
+players. Greg uses [stagger](http://pypi.python.org/pypi/stagger/0.4.2) (as an
+optional dependency) to tag podcasts, if one so wishes. By default, it uses the
+podcast name for the *artist* tag, and the entry title for the *title* tag. To
+enable tagging for MusicaAntigua, copy the system-wide config file locally. 
 
-    cp /etc/greg.conf ~/.config/greg/greg.conf
+(An aside: the location of the system-wide config file will vary from platform
+to platform, but greg will tell you where it is if you ask: `greg
+retrieveglobalconf`. So, to copy the system-wide file locally one can do
 
-and add a section for MusicaAntigua:
+    cp `greg retrieveglobalconf` ~/.config/greg/greg.conf)
+
+Then, add a section for MusicaAntigua:
 
     [MusicaAntigua]
 
@@ -110,32 +139,47 @@ In fact, you can fill out any tag however you see fit. For example,
     tag_genre = Ancient Music
     tag_comment = {date}
 
-will fill the *genre* tag with the string "Ancient Music", and the *comment* tag with the download date.
+will fill the *genre* tag with the string "Ancient Music", and the *comment*
+tag with the download date.
     
 Let's add a video podcast
 
     greg add TEDTalks http://feeds.feedburner.com/TEDTalks_video
 
-By default, Greg only donwloads audio files (in fact, files that have "audio" as part of their type). In order to download the right file in TEDTalks, then, you need to change that in the config file. Again, add a section:
+By default, Greg only donwloads audio files (in fact, files that have "audio"
+as part of their type). In order to download the right file in TEDTalks, then,
+you need to change that in the config file. Again, add a section:
 
     [TEDTalks]
 
     mime = video
 
-You could also have a couple of types there, as in `mime = audio, video`; or any other type, `mime = torrent`, or whatever.
+You could also have a couple of types there, as in `mime = audio, video`; or
+any other type, `mime = torrent`, or whatever.
 
-Another useful thing that you can change in the config file is the download handler; Greg by default uses `urllib.request.urlretrieve`, but you can use whatever you want. I, for example, have
+Another useful thing that you can change in the config file is the download
+handler; Greg by default uses `urllib.request.urlretrieve`, but you can use
+whatever you want. I, for example, have
 
     downloadhandler = wget {link} -P {directory}
 
-in my local `greg.conf`. You can do all sorts of nice things with this. For example, when `check`ing a podcast, you don't need to download it, but maybe just stream it, like this:
+in my local `greg.conf`. You can do all sorts of nice things with this. For
+example, when `check`ing a podcast, you don't need to download it, but maybe
+just stream it, like this:
 
     greg download 0 --downloadhandler "mplayer {link}"
 
-One last thing: if you subscribe to a very active feed, and you are only interested in some of the entries, you can filter the feed. For example, if you only want to watch TED talks about Google, say, you can add the following line to the `[TEDTalks]` section:
+One last thing: if you subscribe to a very active feed, and you are only
+interested in some of the entries, you can filter the feed. For example, if you
+only want to watch TED talks about Google, say, you can add the following line
+to the `[TEDTalks]` section:
 
     filter = "Google" in "{title}"
 
-(You need the quotes around {title} if the string you are filtering by has spaces, for example; they are strictly unnecessary here.)
+(You need the quotes around {title} if the string you are filtering by has
+spaces, for example; they are strictly unnecessary here.)
 
-For information about the {placeholders}, take a look at [greg.conf](https://github.com/manolomartinez/greg/blob/master/data/greg.conf). In `greg.conf` you can also change the download directory, and some other things. It should be self-explanatory.
+For information about the {placeholders}, take a look at
+[greg.conf](https://github.com/manolomartinez/greg/blob/master/data/greg.conf).
+In `greg.conf` you can also change the download directory, and some other
+things. It should be self-explanatory.
