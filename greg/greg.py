@@ -45,7 +45,7 @@ try:  # beautifulsoup4 is an optional dependency
 except ImportError:
     beautifulsoupexists = False
 
-config_filename_global = resource_filename(__name__, 'greg.conf')
+config_filename_global = resource_filename(__name__, 'data/greg.conf')
 
 
 class Session():
@@ -292,7 +292,8 @@ class Feed():
             downloadlinks[urlparse(entry.link).query.split(
                 "/")[-1]] = entry.link
         for podname in downloadlinks:
-            if podname not in self.entrylinks:
+            if (podname, entry.linkdate) not in zip(self.entrylinks,
+                                                    self.linkdates):
                 try:
                     title = entry.title
                 except:
