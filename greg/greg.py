@@ -279,15 +279,28 @@ class Feed():
         """
         downloadlinks = {}
         ignoreenclosures = self.retrieve_config('ignoreenclosures', 'no')
+        notype = self.retrieve_config('notype', 'no')
         if ignoreenclosures == 'no':
             for enclosure in entry.enclosures:
-                # We will download all enclosures of the desired mime-type
-                if any([mimetype in enclosure["type"]
-                        for mimetype in self.mime]):
-                    downloadlinks[urlparse(
-                        enclosure["href"]).path.split(
-                            "/")[-1]] = enclosure["href"]
+                if notype == 'yes':
+                    downloadlinks[urlparse(enclosure["href"]).path.split(
+                        "/")[-1]] = enclosure["href"]
                     # preserve original name
+                else:
+                    try:
+                        # We will download all enclosures of the desired
+                        # mime-type
+                        if any([mimetype in enclosure["type"] for mimetype in
+                                self.mime]):
+                            downloadlinks[urlparse(
+                                enclosure["href"]).path.split(
+                                    "/")[-1]] = enclosure["href"]
+                            # preserve original name
+                    except KeyError:
+                        print("This podcast carries no information about"
+                              "enclosure types. Try using the notype"
+                              "option in your greg.conf", file=sys.stderr,
+                              flush=True)
         else:
             downloadlinks[urlparse(entry.link).query.split(
                 "/")[-1]] = entry.link
