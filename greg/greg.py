@@ -297,8 +297,8 @@ class Feed():
                                     "/")[-1]] = enclosure["href"]
                             # preserve original name
                     except KeyError:
-                        print("This podcast carries no information about"
-                              "enclosure types. Try using the notype"
+                        print("This podcast carries no information about "
+                              "enclosure types. Try using the notype "
                               "option in your greg.conf", file=sys.stderr,
                               flush=True)
         else:
@@ -429,7 +429,7 @@ def parse_podcast(url):
 
 def htmltotext(data):
     if beautifulsoupexists:
-        beautify = BeautifulSoup(data)
+        beautify = BeautifulSoup(data, "lxml")
         sanitizeddata = beautify.get_text()
     else:
         sanitizeddata = data
