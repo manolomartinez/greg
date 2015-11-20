@@ -129,10 +129,9 @@ class Feed():
     def retrieve_config(self, value, default):
         """
         Retrieves a value (with a certain fallback) from the config files
-        (looks first into config_filename_global
-        then into config_filename_user. The latest takes preeminence)
-        if the command line flag for the value is use,
-        that overrides everything else
+        (looks first into config_filename_global then into
+        config_filename_user. The latest takes preeminence) if the command line
+        flag for the value is used, that overrides everything else
         """
         args = self.args
         name = self.name
