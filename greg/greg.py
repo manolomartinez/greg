@@ -503,6 +503,7 @@ def tag(placeholders):
     # now we create a dictionary of tags and values
     tagdict = placeholders.feed.defaulttagdict  # these are the defaults
     config = placeholders.feed.config
+    print(config.defaults)
     section = placeholders.name if config.has_section(
         placeholders.name) else config.default_section
     feedoptions = config.options(section)
