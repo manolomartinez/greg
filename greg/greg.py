@@ -503,18 +503,17 @@ def tag(placeholders):
 
     # now we create a dictionary of tags and values
     tagdict = placeholders.feed.defaulttagdict  # these are the defaults
-    feedoptions = placeholders.feed.config.options(placeholders.name)
-    # this monstruous concatenation of classes... surely a bad idea.
-    tags = [[option.replace(
-        "tag_", ""), placeholders.feed.config[
-            placeholders.name][option]] for option
-        in feedoptions if "tag_" in option]  # these are the tags to be filled
-    if tags == []:
-        tagdict = placeholders.feed.defaulttagdict  # these are the defaults
-    # Now we combine this list with the default dictionary
-    else:
-        for tag in tags:
-            tagdict[tag[0]] = tag[1]
+    try:  # We find out whether there is a section with potential tag info
+        feedoptions = placeholders.feed.config.options(placeholders.name)
+        # this monstruous concatenation of classes... surely a bad idea.
+        tags = [[option.replace("tag_", ""), placeholders.feed.config[
+            placeholders.name][option]] for option in feedoptions if "tag_" in
+                option]  # these are the tags to be filled
+        if tags:
+            for tag in tags:
+                tagdict[tag[0]] = tag[1]
+    except NoSectionError:
+        pass
     for tag in tagdict:
         metadata = substitute_placeholders(
             tagdict[tag], placeholders)
