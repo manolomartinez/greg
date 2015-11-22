@@ -512,7 +512,7 @@ def tag(placeholders):
         if tags:
             for tag in tags:
                 tagdict[tag[0]] = tag[1]
-    except NoSectionError:
+    except configparser.NoSectionError:
         pass
     for tag in tagdict:
         metadata = substitute_placeholders(
