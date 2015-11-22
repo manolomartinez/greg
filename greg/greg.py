@@ -503,7 +503,7 @@ def tag(placeholders):
 
     # now we create a dictionary of tags and values
     tagdict = placeholders.feed.defaulttagdict  # these are the defaults
-    try:  # We find out whether there is a section with potential tag info
+    try:  # We do as if there was a section with potential tag info
         feedoptions = placeholders.feed.config.options(placeholders.name)
         # this monstruous concatenation of classes... surely a bad idea.
         tags = [[option.replace("tag_", ""), placeholders.feed.config[
