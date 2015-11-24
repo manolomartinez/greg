@@ -246,7 +246,7 @@ class Feed():
         Give a date for the entry, depending on feed.sync_by_date
         Save it as feed.linkdate
         """
-        print(entry)
+        print(entry.published_parsed)
         if self.sync_by_date:
             try:
                 entry.linkdate = list(entry.published_parsed)
