@@ -104,7 +104,6 @@ parser_rgc = subparsers.add_parser('retrieveglobalconf', aliases=['rgc'],
                                    help='retrieves the path to the global config file')
 parser_rgc.set_defaults(func=greg.greg.retrieveglobalconf)
 
-# create the parser for the 'retrieveglobalconf' command
 
 def main(): 
     """
