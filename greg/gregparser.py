@@ -106,14 +106,9 @@ parser_rgc.set_defaults(func=greg.greg.retrieveglobalconf)
 
 # create the parser for the 'retrieveglobalconf' command
 
-def main(): # parse the args and call whatever function was selected
-    try:
-        args = parser.parse_args(sys.argv[1:])
-        args.func(vars(args))
-    except AttributeError as err:
-        if str(err) == "\'Namespace\' object has no attribute \'func\'":
-            parser.print_help()
-        else:
-            print("Something has gone wrong: {}".format(err), file = sys.stderr, flush = True)
-    #args = parser.parse_args(sys.argv[1:])
-    #args.func(vars(args))
+def main(): 
+    """
+    Parse the args and call whatever function was selected
+    """
+    args = parser.parse_args(sys.argv[1:])
+    args.func(vars(args))
