@@ -328,8 +328,10 @@ class Feed():
                         download_handler(self, placeholders)
                         if self.willtag:
                             tag(placeholders)
+                        downloaded = True
                     else:
                         print("Skipping {} -- {}".format(title, podname))
+                        downloaded = False
                     if self.info:
                         with open(self.info, 'a') as current:
                             # We write to file this often to ensure that
@@ -339,6 +341,7 @@ class Feed():
                 except URLError:
                     sys.exit(("... something went wrong. "
                              "Are you connected to the internet?"))
+            return downloaded
 
 
 class Placeholders:
@@ -746,17 +749,16 @@ def sync(args):
             print("Checking", title, end="...\n")
             currentdate, stop = feed.how_many()
             entrycounter = 0
-            entries_to_download = []
-            for entry in feed.podcast.entries:
+            entries_to_download = feed.podcast.entries
+            for entry in entries_to_download:
                 feed.fix_linkdate(entry)
-                if entry.linkdate > currentdate and entrycounter < stop:
-                    entries_to_download.append(entry)
-                entrycounter += 1
             # Sort entries_to_download
             entries_to_download.sort(key=operator.attrgetter("linkdate"),
                                      reverse=False)
-            for entry in entries_to_download:
-                feed.download_entry(entry)
+            while entrycounter < stop:
+                if entry.linkdate > currentdate and entrycounter < stop:
+                    downloaded = feed.download_entry(entry)
+                    entrycounter += downloaded
             print("Done")
         else:
             msg = ''.join(["I cannot sync ", feed,
