@@ -277,6 +277,7 @@ class Feed():
         Find entry link and download entry
         """
         downloadlinks = {}
+        downloaded = False
         ignoreenclosures = self.retrieve_config('ignoreenclosures', 'no')
         notype = self.retrieve_config('notype', 'no')
         if ignoreenclosures == 'no':
@@ -327,10 +328,10 @@ class Feed():
                         download_handler(self, placeholders)
                         if self.willtag:
                             tag(placeholders)
-                        downloaded = 1
+                        downloaded = True
                     else:
                         print("Skipping {} -- {}".format(title, podname))
-                        downloaded = 0
+                        downloaded = False
                     if self.info:
                         with open(self.info, 'a') as current:
                             # We write to file this often to ensure that
@@ -757,8 +758,7 @@ def sync(args):
             entries_to_download.sort(key=operator.attrgetter("linkdate"),
                                      reverse=False)
             for entry in entries_to_download:
-                print("we are here")
-                if entry.linkdate > currentdate: 
+                if entry.linkdate > currentdate:
                     downloaded = feed.download_entry(entry)
                     print(downloaded)
                     entrycounter += downloaded
