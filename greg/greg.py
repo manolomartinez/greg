@@ -328,16 +328,16 @@ class Feed():
                         download_handler(self, placeholders)
                         if self.willtag:
                             tag(placeholders)
-                        if self.info:
-                            with open(self.info, 'a') as current:
-                                # We write to file this often to ensure that
-                                # downloaded entries count as downloaded.
-                                current.write(''.join([podname, ' ',
-                                              str(entry.linkdate), '\n']))
                     else:
                         print("Skipping {} -- {}".format(title, podname))
+                    if self.info:
+                        with open(self.info, 'a') as current:
+                            # We write to file this often to ensure that
+                            # downloaded entries count as downloaded.
+                            current.write(''.join([podname, ' ',
+                                          str(entry.linkdate), '\n']))
                 except URLError:
-                    sys.exit(("... something went wrong."
+                    sys.exit(("... something went wrong. "
                              "Are you connected to the internet?"))
 
 
