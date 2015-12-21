@@ -329,9 +329,11 @@ class Feed():
                         if self.willtag:
                             tag(placeholders)
                         downloaded = 1
+                        print(downloaded)
                     else:
                         print("Skipping {} -- {}".format(title, podname))
                         downloaded = 0
+                        print(downloaded)
                     if self.info:
                         with open(self.info, 'a') as current:
                             # We write to file this often to ensure that
