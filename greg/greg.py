@@ -757,6 +757,7 @@ def sync(args):
             entries_to_download.sort(key=operator.attrgetter("linkdate"),
                                      reverse=False)
             for entry in entries_to_download:
+                print("we are here")
                 if entry.linkdate > currentdate: 
                     downloaded = feed.download_entry(entry)
                     print(downloaded)
