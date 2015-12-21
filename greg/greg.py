@@ -246,7 +246,6 @@ class Feed():
         Give a date for the entry, depending on feed.sync_by_date
         Save it as feed.linkdate
         """
-        print(entry.published_parsed)
         if self.sync_by_date:
             try:
                 entry.linkdate = list(entry.published_parsed)
@@ -329,11 +328,9 @@ class Feed():
                         if self.willtag:
                             tag(placeholders)
                         downloaded = 1
-                        print(downloaded)
                     else:
                         print("Skipping {} -- {}".format(title, podname))
                         downloaded = 0
-                        print(downloaded)
                     if self.info:
                         with open(self.info, 'a') as current:
                             # We write to file this often to ensure that
