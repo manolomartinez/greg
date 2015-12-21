@@ -341,7 +341,7 @@ class Feed():
                 except URLError:
                     sys.exit(("... something went wrong. "
                              "Are you connected to the internet?"))
-            return downloaded
+        return downloaded
 
 
 class Placeholders:
