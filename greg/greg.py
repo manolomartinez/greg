@@ -757,10 +757,12 @@ def sync(args):
             # Sort entries_to_download
             entries_to_download.sort(key=operator.attrgetter("linkdate"),
                                      reverse=False)
-            while entrycounter < stop:
-                if entry.linkdate > currentdate and entrycounter < stop:
+            for entry in entries_to_download:
+                if entry.linkdate > currentdate: 
                     downloaded = feed.download_entry(entry)
                     entrycounter += downloaded
+                if entrycounter >= stop:
+                    break
             print("Done")
         else:
             msg = ''.join(["I cannot sync ", feed,
