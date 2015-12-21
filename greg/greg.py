@@ -762,6 +762,7 @@ def sync(args):
             for entry in entries_to_download:
                 if entry.linkdate > currentdate: 
                     downloaded = feed.download_entry(entry)
+                    print(downloaded)
                     entrycounter += downloaded
                 if entrycounter >= stop:
                     break
