@@ -560,7 +560,9 @@ def download_handler(feed, placeholders):
         value_list = shlex.split(value)
         instruction_list = [substitute_placeholders(part, placeholders) for
                             part in value_list]
-        subprocess.call(instruction_list)
+        returncode = subprocess.call(instruction_list)
+        if returncode:
+            raise URLError
 
 
 def parse_feed_info(infofile):
