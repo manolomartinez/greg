@@ -756,7 +756,7 @@ def sync(args):
                 feed.fix_linkdate(entry)
             # Sort entries_to_download, but only if you want to download as
             # many as there are
-            if stop < len(entries_to_download):
+            if stop >= len(entries_to_download):
                 entries_to_download.sort(key=operator.attrgetter("linkdate"),
                                          reverse=False)
             for entry in entries_to_download:
