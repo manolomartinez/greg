@@ -350,7 +350,7 @@ class Placeholders:
         self.link = link
         self.filename = filename
         # self.fullpath = os.path.join(self.directory, self.filename)
-        self.title = title
+        self.title = title.replace("\"", "'")
         self.filename_title = sanitize(title)
         try:
             self.podcasttitle = feed.podcast.title
