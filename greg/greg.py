@@ -526,7 +526,6 @@ def tag(placeholders):
 def filtercond(placeholders):
     template = placeholders.feed.retrieve_config("filter", "True")
     condition = substitute_placeholders(template, placeholders)
-    condition.replace("\"", "'")
     return eval(condition)
 
 
