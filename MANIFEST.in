@@ -1,5 +1,4 @@
 include COPYING
 include README.md
 include setup.py
-include data/greg.conf
 recursive-include greg *
