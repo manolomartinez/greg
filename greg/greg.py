@@ -95,7 +95,7 @@ class Session():
         config.read([config_filename_global, self.config_filename_user])
         section = config.default_section
         data_path = config.get(section, 'Data directory',
-                               fallback='~/.local/share/greg')
+                               fallback='~/.local/share/greg/data')
         data_path_expanded = os.path.expanduser(data_path)
         ensure_dir(data_path_expanded)
         return os.path.expanduser(data_path_expanded)

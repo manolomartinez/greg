@@ -49,7 +49,7 @@ subparsers = parser.add_subparsers()
 parser_add = subparsers.add_parser('add', help='adds a new feed')
 parser_add.add_argument('name', help='the name of the new feed')
 parser_add.add_argument('url', type = url, help='the url of the new feed')
-parser_add.add_argument('--downloadfrom', '-d', type=from_date, 
+parser_add.add_argument('--downloadfrom', '-d', type=from_date,
     help='the date from which files should be downloaded (YYYY-MM-DD)')
 parser_add.set_defaults(func=greg.greg.add)
 
@@ -58,7 +58,7 @@ parser_edit = subparsers.add_parser('edit', help='edits a feed')
 parser_edit.add_argument('name', help='the name of the feed to be edited')
 group = parser_edit.add_mutually_exclusive_group(required = True)
 group.add_argument('--url', '-u', type = url, help='the new url of the feed')
-group.add_argument('--downloadfrom', '-d', 
+group.add_argument('--downloadfrom', '-d',
         type=from_date, help='the date from which files should be downloaded (YYYY-MM-DD)')
 parser_edit.set_defaults(func=greg.greg.edit)
 
@@ -108,6 +108,7 @@ parser_rgc.set_defaults(func=greg.greg.retrieveglobalconf)
 def main():
     """
     Parse the args and call whatever function was selected
+    Default to -h if no arguments
     """
     args = parser.parse_args()
     try:
