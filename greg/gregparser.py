@@ -109,5 +109,5 @@ def main():
     """
     Parse the args and call whatever function was selected
     """
-    args = parser.parse_args(sys.argv[1:])
+    args = parser.parse_args()
     args.func(vars(args))
