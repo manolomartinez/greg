@@ -12,5 +12,6 @@ setup(
     packages=['greg'],
     entry_points={'console_scripts': ['greg = greg.gregparser:main']},
     package_data={'greg': ['data/*.conf']},
+    include_package_data=True,
     license='GPLv3'
 )
