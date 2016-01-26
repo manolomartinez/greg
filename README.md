@@ -5,6 +5,31 @@ A command-line podcast aggregator, written in python 3. It basically exposes
 some of the functionality of the excellent
 [feedparser](http://pypi.python.org/pypi/feedparser).
 
+# Installation
+
+greg requires Python 3.
+
+## Install from pip
+
+When using pip it's preferable to install packages locally:
+
+`pip3 install --user greg`
+
+This installs greg to `~/.local/bin`. Ensure this directory is included in your system path by adding these lines to `~/.profile`:
+
+```
+# set PATH so it includes user's .local/bin if it exists
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi
+```
+
+Save `~/.profile` and run the following command in a terminal to refresh the system path:
+
+`source ~/.profile`
+
+Now run `greg` and you should see the greg help text displayed in your terminal.
+
 # Usage
 
 Let's start by adding a feed (RSS or Atom versions will do):
