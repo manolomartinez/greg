@@ -44,7 +44,6 @@ parser.add_argument('--configfile', '-cf',
 parser.add_argument('--datadirectory', '-dtd',
                     help='specifies the directory where greg keeps its data')
 subparsers = parser.add_subparsers()
-parser.set_defaults(func=parser.print_help())
 
 # create the parser for the "add" command
 parser_add = subparsers.add_parser('add', help='adds a new feed')
