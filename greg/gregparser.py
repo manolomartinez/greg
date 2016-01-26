@@ -105,9 +105,14 @@ parser_rgc = subparsers.add_parser('retrieveglobalconf', aliases=['rgc'],
 parser_rgc.set_defaults(func=greg.greg.retrieveglobalconf)
 
 
-def main(): 
+def main():
     """
     Parse the args and call whatever function was selected
     """
     args = parser.parse_args()
-    args.func(vars(args))
+    try:
+        function = args.func
+    except AttributeError:
+        parser.print_usage()
+        parser.exit(1)
+    function(vars(args))
