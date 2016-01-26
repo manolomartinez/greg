@@ -1,17 +1,18 @@
-greg
-====
+# greg
 
 A command-line podcast aggregator, written in python 3. It basically exposes
 some of the functionality of the excellent
 [feedparser](http://pypi.python.org/pypi/feedparser).
 
-# Installation
+## Installation
 
 greg requires Python 3.
 
-## Install from pip
+### Install via pip
 
-When using pip it's preferable to install packages locally:
+These instructions will not work with Python 3 installed via homebrew. See the [section below](#installing-via-homebrew-python3) for work-arounds.
+
+When using pip it's preferable to install packages locally.
 
 `pip3 install --user greg`
 
@@ -30,7 +31,24 @@ Save `~/.profile` and run the following command in a terminal to refresh the sys
 
 Now run `greg` and you should see the greg help text displayed in your terminal.
 
-# Usage
+### Installing via homebrew python3
+
+The normal pip `install --user` is disabled for homebrew Python 3, so you cannot follow the above instructions. You have 2 options:
+
+1. Create a workaround by setting a custom local install location. Follow [these instructions](https://github.com/Homebrew/homebrew/blob/master/share/doc/homebrew/Homebrew-and-Python.md) in the homebrew docs.
+2. Use sudo: `sudo pip3 install greg`
+
+## Configuration
+
+To edit the configuration for greg, copy the system-wide [greg.conf](https://github.com/manolomartinez/greg/blob/master/greg/data/greg.conf) file to your local config folder:
+
+```
+cp `greg retrieveglobalconf` ~/.config/greg/greg.conf
+```
+
+Then open and edit `~/.config/greg/greg.conf` in a text editor. The configuration file is self-explanatory.
+
+## Usage
 
 Let's start by adding a feed (RSS or Atom versions will do):
 
@@ -45,7 +63,7 @@ If you were to run `greg sync` now, it would download the latest episode of the 
 (the `-f` flag means that "PhilosophyBites" is the name of a feed. `greg check` also accepts urls directly, using the `-u` flag.)
 
 This will give you the following kind of info:
-   
+
 
     0: Tom Sorell on Surveillance (2013-01-25T13:43:46+00:00)
     1: John Campbell on Schizophrenia (2013-01-08T12:41:27+00:00)
@@ -145,13 +163,7 @@ is, these guys do not tag their episodes, which is bad for most portable media
 players. Greg uses [stagger](http://pypi.python.org/pypi/stagger/0.4.2) (as an
 optional dependency) to tag podcasts, if one so wishes. By default, it uses the
 podcast name for the *artist* tag, and the entry title for the *title* tag. To
-enable tagging for MusicaAntigua, copy the system-wide config file locally. 
-
-(An aside: the location of the system-wide config file will vary from platform
-to platform, but greg will tell you where it is if you ask: `greg
-retrieveglobalconf`. So, to copy the system-wide file locally one can do
-
-    cp `greg retrieveglobalconf` ~/.config/greg/greg.conf)
+enable tagging for MusicaAntigua, copy the system-wide config file locally. (see [Configuration](#configuration) above)
 
 Then, add a section for MusicaAntigua:
 
@@ -166,7 +178,7 @@ In fact, you can fill out any tag however you see fit. For example,
 
 will fill the *genre* tag with the string "Ancient Music", and the *comment*
 tag with the download date.
-    
+
 Let's add a video podcast
 
     greg add TEDTalks http://feeds.feedburner.com/TEDTalks_video
@@ -205,6 +217,6 @@ to the `[TEDTalks]` section:
 spaces, for example; they are strictly unnecessary here.)
 
 For information about the {placeholders}, take a look at
-[greg.conf](https://github.com/manolomartinez/greg/blob/master/data/greg.conf).
+[greg.conf](https://github.com/manolomartinez/greg/blob/master/greg/data/greg.conf).
 In `greg.conf` you can also change the download directory, and some other
 things. It should be self-explanatory.
