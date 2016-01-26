@@ -230,7 +230,10 @@ class Feed():
         Ascertain where to start downloading, and how many entries.
         """
         if self.linkdates != []:
-            currentdate = max(self.linkdates)
+            if max(self.linkdates) <= time.time():
+                currentdate = max(self.linkdates)
+            else:
+                currentdate = time.time()
             stop = sys.maxsize
         else:
             currentdate = [1, 1, 1, 0, 0]
