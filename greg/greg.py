@@ -230,7 +230,17 @@ class Feed():
         Ascertain where to start downloading, and how many entries.
         """
         if self.linkdates != []:
-            currentdate = max(self.linkdates)
+            # What follows is a quick sanity check: if the entry date is in the
+            # future, this is probably a mistake, and we just count the entry
+            # date as right now.
+            if max(self.linkdates) <= list(time.localtime()):
+                currentdate = max(self.linkdates)
+            else:
+                currentdate = list(time.localtime())
+                print(("This entry has its date set in the future. "
+                       "I will use your current local time as its date "
+                       "instead."),
+                      file=sys.stderr, flush=True)
             stop = sys.maxsize
         else:
             currentdate = [1, 1, 1, 0, 0]
@@ -579,6 +589,8 @@ def parse_feed_info(infofile):
                 # This is the list of already downloaded entry links
                 linkdates.append(eval(line.split(sep=' ', maxsplit=1)[1]))
                 # This is the list of already downloaded entry dates
+                # Note that entrydates are lists, converted from a
+                # time.struct_time() object
     except FileNotFoundError:
         pass
     return entrylinks, linkdates
