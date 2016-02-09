@@ -220,3 +220,9 @@ For information about the {placeholders}, take a look at
 [greg.conf](https://github.com/manolomartinez/greg/blob/master/greg/data/greg.conf).
 In `greg.conf` you can also change the download directory, and some other
 things. It should be self-explanatory.
+
+## Contributors
+
+* [FilipBB](https://github.com/FilipBB)
+* [Narrat](https://github.com/Narrat)
+* [Nick](https://github.com/xHN35RQ)
