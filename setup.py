@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='Greg',
-    version='0.4.5',
+    version='0.4.5.1',
     install_requires=['feedparser'],
     description='A command-line podcast aggregator',
     author='Manolo Martínez',
