@@ -256,16 +256,15 @@ class Feed():
         Give a date for the entry, depending on feed.sync_by_date
         Save it as feed.linkdate
         """
-        print(entry)
         if self.sync_by_date:
             try:
                 entry.linkdate = list(entry.published_parsed)
                 self.linkdate = list(entry.published_parsed)
-            except AttributeError:
+            except AttributeError or TypeError:
                 try:
                     entry.linkdate = list(entry.updated_parsed)
                     self.linkdate = list(entry.updated_parsed)
-                except AttributeError:
+                except AttributeError or TypeError:
                     print(("This entry doesn't seem to have a parseable date. "
                            "I will use your local time instead."),
                           file=sys.stderr, flush=True)
