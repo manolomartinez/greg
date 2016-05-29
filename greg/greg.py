@@ -260,11 +260,11 @@ class Feed():
             try:
                 entry.linkdate = list(entry.published_parsed)
                 self.linkdate = list(entry.published_parsed)
-            except AttributeError or TypeError:
+            except (AttributeError, TypeError):
                 try:
                     entry.linkdate = list(entry.updated_parsed)
                     self.linkdate = list(entry.updated_parsed)
-                except AttributeError or TypeError:
+                except (AttributeError, TypeError):
                     print(("This entry doesn't seem to have a parseable date. "
                            "I will use your local time instead."),
                           file=sys.stderr, flush=True)
