@@ -435,8 +435,7 @@ def parse_podcast(url):
     except KeyError:
         wentwrong = False
     if wentwrong:
-        sys.exit(("I cannot check podcasts now."
-                 "Are you connected to the internet?"))
+        print("Error: ", url, ": ", str(podcast["bozo_exception"]))
     return podcast
 
 
