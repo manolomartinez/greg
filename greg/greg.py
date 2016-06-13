@@ -643,12 +643,13 @@ def add(args):  # Adds a new feed
 
 def edit(args):  # Edits the information associated with a certain feed
     session = Session(args)
-    feed_info = os.path.join(session.data_dir, args["name"])
-    if not(args["name"] in session.feeds):
+    name = args["name"][0]
+    feed_info = os.path.join(session.data_dir, name)
+    if not(name in session.feeds):
         sys.exit("You don't have a feed with that name.")
     for key, value in args.items():
         if value is not None and key == "url":
-            session.feeds[args["name"]][key] = str(value)
+            session.feeds[name][key] = str(value[0])
             with open(session.data_filename, 'w') as configfile:
                 session.feeds.write(configfile)
         if value is not None and key == "downloadfrom":
@@ -666,7 +667,7 @@ def edit(args):  # Edits the information associated with a certain feed
                        "Using --downloadfrom might not have the"
                        "results that you expect.").
                       format(args["name"]), file=sys.stderr, flush=True)
-            line = ' '.join(["currentdate", str(value), "\n"])
+            line = ' '.join(["currentdate", str(value[0]), "\n"])
             # A dummy entry with the new downloadfrom date.
             try:
                 # Remove from the feed file all entries
@@ -689,27 +690,31 @@ def remove(args):
     Remove the feed given in <args>
     """
     session = Session(args)
-    if not args["name"] in session.feeds:
-        sys.exit("You don't have a feed with that name.")
-    inputtext = ("Are you sure you want to remove the {} "
-                 " feed? (y/N) ").format(args["name"])
-    reply = input(inputtext)
-    if reply != "y" and reply != "Y":
-        return 0
-    else:
-        session.feeds.remove_section(args["name"])
-        with open(session.data_filename, 'w') as configfile:
-            session.feeds.write(configfile)
-        try:
-            os.remove(os.path.join(session.data_dir, args["name"]))
-        except FileNotFoundError:
-            pass
+    for name in args["name"]:
+        if not name in session.feeds:
+            sys.exit("You don't have a feed with that name.")
+        inputtext = ("Are you sure you want to remove the {} "
+                     "feed? (y/N) ").format(name)
+        reply = input(inputtext)
+        if reply != "y" and reply != "Y":
+            print('Not removed')
+        else:
+            session.feeds.remove_section(name)
+            with open(session.data_filename, 'w') as configfile:
+                session.feeds.write(configfile)
+            try:
+                os.remove(os.path.join(session.data_dir, name))
+            except FileNotFoundError:
+                pass
 
+def get_feeds(args): # Returns a list of feeds
+    session = Session(args)
+    return session.list_feeds()
 
 def info(args):  # Provides information of a number of feeds
     session = Session(args)
     if "all" in args["names"]:
-        feeds = session.list_feeds()
+        feeds = get_feeds(args)
     else:
         feeds = args["names"]
     for feed in feeds:
@@ -731,7 +736,7 @@ def pretty_print(session, feed):
 
 def list_for_user(args):
     session = Session(args)
-    for feed in session.list_feeds():
+    for feed in sorted(session.list_feeds()):
         print(feed)
     print()
 
@@ -789,15 +794,15 @@ def check(args):
     """
     session = Session(args)
     if str(args["url"]) != 'None':
-        url = args["url"]
+        url = args["url"][0]
         name = "DEFAULT"
     else:
         try:
-            url = session.feeds[args["feed"]]["url"]
-            name = args["feed"]
+            name = args["feed"][0]
+            url = session.feeds[name]["url"]
         except KeyError:
             sys.exit("You don't appear to have a feed with that name.")
-    podcast = parse_podcast(url)
+    podcast = parse_podcast(str(url))
     for entry in enumerate(podcast.entries):
         listentry = list(entry)
         print(listentry[0], end=": ")
