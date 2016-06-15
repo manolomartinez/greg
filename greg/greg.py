@@ -25,7 +25,7 @@ import re
 import unicodedata
 import string
 from itertools import filterfalse
-import urllib.request
+from urllib.request import urlretrieve
 from urllib.parse import urlparse
 from urllib.error import URLError
 from lxml import etree as ET
