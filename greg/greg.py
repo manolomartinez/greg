@@ -25,9 +25,10 @@ import re
 import unicodedata
 import string
 from itertools import filterfalse
-from urllib.request import urlretrieve
+import urllib.request
 from urllib.parse import urlparse
 from urllib.error import URLError
+from lxml import etree as ET
 
 from pkg_resources import resource_filename
 import feedparser
@@ -86,16 +87,16 @@ class Session():
         """
         args = self.args
         try:
-            if args['datadirectory']:
-                ensure_dir(args['datadirectory'])
-                return args['datadirectory']
+            if args["datadirectory"]:
+                ensure_dir(args["datadirectory"])
+                return args["datadirectory"]
         except KeyError:
             pass
         config = configparser.ConfigParser()
         config.read([config_filename_global, self.config_filename_user])
         section = config.default_section
-        data_path = config.get(section, 'Data directory',
-                               fallback='~/.local/share/greg')
+        data_path = config.get(section, "Data directory",
+                               fallback="~/.local/share/greg")
         data_path_expanded = os.path.expanduser(data_path)
         ensure_dir(data_path_expanded)
         return os.path.expanduser(data_path_expanded)
@@ -162,9 +163,9 @@ class Feed():
         section = self.name if self.config.has_section(
             self.name) else self.config.default_section
         download_path = self.config.get(
-            section, 'Download directory', fallback='~/Podcasts')
+            section, "Download directory", fallback="~/Podcasts")
         subdirectory = self.config.get(
-            section, 'Create subdirectories', fallback='no')
+            section, "Create subdirectories", fallback="no")
         return [os.path.expanduser(download_path), subdirectory]
 
     def has_date(self):
@@ -626,19 +627,28 @@ def retrieveglobalconf(args):
 
 def add(args):  # Adds a new feed
     session = Session(args)
-    if args["name"] in session.feeds.sections():
-        sys.exit("You already have a feed with that name.")
-    if args["name"] in ["all", "DEFAULT"]:
-        sys.exit(
-            ("greg uses ""{}"" for a special purpose."
-            "Please choose another name for your feed.").format(args["name"]))
-    entry = {}
-    for key, value in args.items():
-        if value is not None and key != "func" and key != "name":
-            entry[key] = value
-    session.feeds[args["name"]] = entry
-    with open(session.data_filename, 'w') as configfile:
-        session.feeds.write(configfile)
+    isduplicate = False
+    for feed in session.list_feeds():
+        if session.feeds.has_option(feed, "url") and args["url"] == session.feeds.get(feed, "url"):
+            print("You are already subscribed to %r as %r." % (args["url"], str(feed)))
+            isduplicate = True
+        elif args["name"] in feed:
+            print("You already have a feed called %r." % args["name"])
+            isduplicate = True
+        elif args["name"] in ["all", "DEFAULT"]:
+            print(
+                ("greg uses ""{}"" for a special purpose."
+                "Please choose another name for your feed.").format(args["name"]))
+            isduplicate = True
+    if not isduplicate:
+        entry = {}
+        for key, value in args.items():
+            if value is not None and key != "func" and key != "name" and key != "import":
+                entry[key] = value
+        session.feeds[args["name"]] = entry
+        with open(session.data_filename, 'w') as configfile:
+            session.feeds.write(configfile)
+        print("Added %r." % args["name"])
 
 
 def edit(args):  # Edits the information associated with a certain feed
@@ -707,7 +717,7 @@ def remove(args):
             except FileNotFoundError:
                 pass
 
-def get_feeds(args): # Returns a list of feeds
+def get_feeds(args): # Returns a list of feed names
     session = Session(args)
     return session.list_feeds()
 
@@ -849,3 +859,51 @@ def download(args):
         feed.entrylinks = []
         feed.fix_linkdate(entry)
         feed.download_entry(entry)
+
+def opml(args):
+    """
+    Implement the 'greg opml' command
+    """
+    if args["import"]:
+        opmlfile = args["import"][0]
+        try:
+            opmltree = ET.parse(opmlfile)
+        except ET.ParseError:
+            sys.exit("%r does not appear to be a valid opml file." % opmlfile)
+        for element in opmltree.iterfind('.//*[@type="rss"]'):
+            if element.get('xmlUrl'):
+                args["url"] = element.get('xmlUrl')
+            elif element.get('url'):
+                args["url"] = element.get('url')
+            if element.get('title'):
+                args["name"] = element.get('title')
+            elif element.get('text'):
+                args["name"] = element.get('text')
+            else:
+                print("No title found for this feed, using url as title.")
+                args["name"] = args["url"]
+            add(args)
+    if args["export"]:
+        session = Session(args)
+        filename = args["export"][0]
+        toplevel = ET.Element("opml")
+        toplevel.set("version", "2.0")
+        head = ET.SubElement(toplevel, "head")
+        title = ET.SubElement(head, "title")
+        title.text = "Podcasts"
+        dateCreated = ET.SubElement(head, "dateCreated")
+        dateCreated.text = time.strftime("%c %Z")
+        body = ET.SubElement(toplevel, "body")
+        for feedname in session.list_feeds():
+            if session.feeds.has_option(feedname, "url"):
+                outline = ET.SubElement(body, "outline")
+                outline.set("text", feedname)
+                outline.set("title", feedname)
+                outline.set("xmlUrl", session.feeds.get(feedname, "url"))
+                outline.set("type", "rss")
+        opmlfile = open(filename, 'wb')
+        opmlfile.write(('<?xml version="1.0" encoding="UTF-8"?>\n' \
+                + '<!-- Generated by greg (https://github.com/manolomartinez/greg) on ' \
+                + time.strftime("%c %Z") + ' -->\n\n').encode())
+        opmlfile.write(ET.tostring(toplevel, encoding="utf-8", pretty_print=True))
+        opmlfile.close()
