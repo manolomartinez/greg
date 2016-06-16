@@ -20,6 +20,12 @@ from urllib.parse import urlparse
 
 import greg.greg
 
+try:
+    import argcomplete
+    argcompleteexists = True
+except ImportError:
+    argcompleteexists = False
+
 # defining the from_date type
 def from_date(string):
     try:
@@ -41,6 +47,12 @@ def url(string):
 def set_FeedChoices(value):
     global feednames
     feednames=greg.greg.get_feeds(value)
+
+# send list of subscribed feeds to argcomplete
+def customCompleter(prefix, parsed_args, **kwargs):
+    if not parsed_args.datadirectory and not parsed_args.configfile:
+        set_FeedChoices({}) #if datadirectory or configfile are not specified, get greg to use default
+    return feednames
 
 # set possible choices to list of feed names for appropriate data dir or configfile
 class customActionSetFeedChoices(argparse.Action):
@@ -85,7 +97,7 @@ parser_add.set_defaults(func=greg.greg.add)
 
 # create the parser for the "edit" command
 parser_edit = subparsers.add_parser('edit', help='edits a feed')
-parser_edit.add_argument('name', action=customActionSetFeedChoices, help='the name of the feed to be edited', nargs=1, metavar='FEEDNAME')
+parser_edit.add_argument('name', action=customActionSetFeedChoices, help='the name of the feed to be edited', nargs=1, metavar='FEEDNAME').completer = customCompleter
 group = parser_edit.add_mutually_exclusive_group(required = True)
 group.add_argument('--url', '-u', type = url, help='the new url of the feed', nargs=1)
 group.add_argument('--downloadfrom', '-d', 
@@ -94,7 +106,7 @@ parser_edit.set_defaults(func=greg.greg.edit)
 
 # create the parser for the "info" command
 parser_info = subparsers.add_parser('info', help='provides information about a feed')
-parser_info.add_argument('names', action=customActionSetFeedChoices, help='the name(s) of the feed(s) you want to know about', nargs='*', default=['all'], metavar='FEEDNAME')
+parser_info.add_argument('names', action=customActionSetFeedChoices, help='the name(s) of the feed(s) you want to know about', nargs='*', default=['all'], metavar='FEEDNAME').completer = customCompleter
 parser_info.set_defaults(func=greg.greg.info)
 
 # create the parser for the "list" command
@@ -103,7 +115,7 @@ parser_list.set_defaults(func=greg.greg.list_for_user)
 
 # create the parser for the "sync" command
 parser_sync = subparsers.add_parser('sync', help='syncs feed(s)')
-parser_sync.add_argument('names', help='the name(s) of the feed(s) you want to sync', action=customActionSetFeedChoices, nargs='*', default=['all'], metavar='FEEDNAME')
+parser_sync.add_argument('names', help='the name(s) of the feed(s) you want to sync', action=customActionSetFeedChoices, nargs='*', default=['all'], metavar='FEEDNAME').completer = customCompleter
 parser_sync.add_argument('--downloadhandler', '-dh', help='whatever you want greg to do with the enclosure')
 parser_sync.add_argument('--downloaddirectory', '-dd', help='the directory to which you want to save your downloads')
 parser_sync.add_argument('--firstsync', '-fs', help='the number of files to download (if this is the first sync)')
@@ -113,7 +125,7 @@ parser_sync.set_defaults(func=greg.greg.sync)
 parser_check = subparsers.add_parser('check', help='checks feed')
 check_group = parser_check.add_mutually_exclusive_group(required=True)
 check_group.add_argument('--url', '-u', type = url, help='the url that you want to check', nargs=1)
-check_group.add_argument('--feed', '-f', help='the feed that you want to check', action=customActionSetFeedChoices, nargs=1, metavar='FEEDNAME')
+check_group.add_argument('--feed', '-f', help='the feed that you want to check', action=customActionSetFeedChoices, nargs=1, metavar='FEEDNAME').completer = customCompleter
 parser_check.set_defaults(func=greg.greg.check)
 
 # create the parser for the "download" command
@@ -126,7 +138,7 @@ parser_download.set_defaults(func=greg.greg.download)
 
 # create the parser for the "remove" command
 parser_remove = subparsers.add_parser('remove', help='removes feed(s)')
-parser_remove.add_argument('name', help='the name of the feed(s) you want to remove', action=customActionSetFeedChoices, nargs='+', metavar='FEEDNAME')
+parser_remove.add_argument('name', help='the name of the feed(s) you want to remove', action=customActionSetFeedChoices, nargs='+', metavar='FEEDNAME').completer = customCompleter
 parser_remove.set_defaults(func=greg.greg.remove)
 
 # create the parser for the 'opml' command
@@ -145,6 +157,9 @@ def main():
     """
     Parse the args and call whatever function was selected
     """
+    if argcompleteexists:
+        argcomplete.safe_actions = argcomplete.safe_actions + (customActionSetFeedChoices,)
+        argcomplete.autocomplete(parser)
     args = parser.parse_args()
     try:
         function = args.func
