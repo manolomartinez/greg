@@ -10,7 +10,7 @@ setup(
     author_email='manolo@austrohungaro.com',
     url='https://github.com/manolomartinez/greg',
     packages=['greg'],
-    entry_points={'console_scripts': ['greg = greg.gregparser:main']},
+    entry_points={'console_scripts': ['greg = greg.parser:main']},
     package_data={'greg': ['data/*.conf']},
     license='GPLv3'
 )
