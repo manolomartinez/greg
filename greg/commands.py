@@ -22,8 +22,8 @@ import pickle
 import sys
 import time
 
-import classes as c
-import aux_functions as aux
+import greg.classes as c
+import greg.aux_functions as aux
 
 
 def retrieveglobalconf(args):
@@ -33,7 +33,10 @@ def retrieveglobalconf(args):
     print(c.config_filename_global)
 
 
-def add(args):  # Adds a new feed
+def add(args):
+    """
+    Add a new feed
+    """
     session = c.Session(args)
     if args["name"] in session.feeds.sections():
         sys.exit("You already have a feed with that name.")
@@ -115,7 +118,10 @@ def remove(args):
             pass
 
 
-def info(args):  # Provides information of a number of feeds
+def info(args):
+    """
+    Provide information of a number of feeds
+    """
     session = c.Session(args)
     if "all" in args["names"]:
         feeds = session.list_feeds()
@@ -126,7 +132,9 @@ def info(args):  # Provides information of a number of feeds
 
 
 def pretty_print(session, feed):
-    # Prints the dictionary entry of a feed in a nice way.
+    """
+    Print the dictionary entry of a feed in a nice way.
+    """
     print()
     feed_info = os.path.join(session.data_dir, feed)
     entrylinks, linkdates = aux.parse_feed_info(feed_info)
