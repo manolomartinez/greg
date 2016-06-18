@@ -208,18 +208,6 @@ def get_date(line):
     return date
 
 
-def transition(args, feed, feeds):
-    # A function to ease the transition to individual feed files
-    if "downloadfrom" in feeds[feed]:
-        edit({"downloadfrom": eval(feeds[feed]["downloadfrom"]), "name": feed})
-        # edit() is usually called from the outside
-        DATA_DIR = retrieve_data_directory(args)
-        DATA_FILENAME = os.path.join(DATA_DIR, "data")
-        feeds.remove_option(feed, "downloadfrom")
-        with open(DATA_FILENAME, 'w') as configfile:
-            feeds.write(configfile)
-
-
 def download_handler(feed, placeholders):
     import shlex
     """
