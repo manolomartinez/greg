@@ -17,24 +17,30 @@
 """
 Defines the functions corresponding to each of the subcommands
 """
+import os.path
+import pickle
+import sys
+import time
 
+import classes as c
+import aux_functions as aux
 
 
 def retrieveglobalconf(args):
     """
     Retrieve the global config path
     """
-    print(config_filename_global)
+    print(c.config_filename_global)
 
 
 def add(args):  # Adds a new feed
-    session = Session(args)
+    session = c.Session(args)
     if args["name"] in session.feeds.sections():
         sys.exit("You already have a feed with that name.")
     if args["name"] in ["all", "DEFAULT"]:
         sys.exit(
             ("greg uses ""{}"" for a special purpose."
-            "Please choose another name for your feed.").format(args["name"]))
+             "Please choose another name for your feed.").format(args["name"]))
     entry = {}
     for key, value in args.items():
         if value is not None and key != "func" and key != "name":
@@ -45,9 +51,9 @@ def add(args):  # Adds a new feed
 
 
 def edit(args):  # Edits the information associated with a certain feed
-    session = Session(args)
+    session = c.Session(args)
     feed_info = os.path.join(session.data_dir, args["name"])
-    if not(args["name"] in session.feeds):
+    if not args["name"] in session.feeds:
         sys.exit("You don't have a feed with that name.")
     for key, value in args.items():
         if value is not None and key == "url":
@@ -77,7 +83,7 @@ def edit(args):  # Edits the information associated with a certain feed
                 with open(feed_info, 'r') as previous:
                     previouslist = previous.readlines()
                     current = [aline for aline in previouslist if value >
-                               get_date(aline)]
+                               aux.get_date(aline)]
                     current.append(line)
                 with open(feed_info, 'w') as currentfile:
                     currentfile.writelines(current)
@@ -91,7 +97,7 @@ def remove(args):
     """
     Remove the feed given in <args>
     """
-    session = Session(args)
+    session = c.Session(args)
     if not args["name"] in session.feeds:
         sys.exit("You don't have a feed with that name.")
     inputtext = ("Are you sure you want to remove the {} "
@@ -110,7 +116,7 @@ def remove(args):
 
 
 def info(args):  # Provides information of a number of feeds
-    session = Session(args)
+    session = c.Session(args)
     if "all" in args["names"]:
         feeds = session.list_feeds()
     else:
@@ -123,7 +129,7 @@ def pretty_print(session, feed):
     # Prints the dictionary entry of a feed in a nice way.
     print()
     feed_info = os.path.join(session.data_dir, feed)
-    entrylinks, linkdates = parse_feed_info(feed_info)
+    entrylinks, linkdates = aux.parse_feed_info(feed_info)
     print(feed)
     print("-"*len(feed))
     print(''.join(["    url: ", session.feeds[feed]["url"]]))
@@ -133,7 +139,7 @@ def pretty_print(session, feed):
 
 
 def list_for_user(args):
-    session = Session(args)
+    session = c.Session(args)
     for feed in session.list_feeds():
         print(feed)
     print()
@@ -144,7 +150,7 @@ def sync(args):
     Implement the 'greg sync' command
     """
     import operator
-    session = Session(args)
+    session = c.Session(args)
     if "all" in args["names"]:
         targetfeeds = session.list_feeds()
     else:
@@ -156,7 +162,7 @@ def sync(args):
             else:
                 targetfeeds.append(name)
     for target in targetfeeds:
-        feed = Feed(session, target, None)
+        feed = c.Feed(session, target, None)
         if not feed.wentwrong:
             try:
                 title = feed.podcast.target.title
@@ -190,7 +196,7 @@ def check(args):
     """
     Implement the 'greg check' command
     """
-    session = Session(args)
+    session = c.Session(args)
     if str(args["url"]) != 'None':
         url = args["url"]
         name = "DEFAULT"
@@ -200,7 +206,7 @@ def check(args):
             name = args["feed"]
         except KeyError:
             sys.exit("You don't appear to have a feed with that name.")
-    podcast = parse_podcast(url)
+    podcast = aux.parse_podcast(url)
     for entry in enumerate(podcast.entries):
         listentry = list(entry)
         print(listentry[0], end=": ")
@@ -223,8 +229,8 @@ def download(args):
     """
     Implement the 'greg download' command
     """
-    session = Session(args)
-    issues = parse_for_download(args)
+    session = c.Session(args)
+    issues = aux.parse_for_download(args)
     if issues == ['']:
         sys.exit(
             "You need to give a list of issues, of the form ""a, b-c, d...""")
@@ -236,7 +242,7 @@ def download(args):
     with open(dumpfilename, mode='rb') as dumpfile:
         dump = pickle.load(dumpfile)
     try:
-        feed = Feed(session, dump[0], dump[1])
+        feed = c.Feed(session, dump[0], dump[1])
     except Exception:
         sys.exit((
             "... something went wrong."
