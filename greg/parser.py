@@ -18,7 +18,7 @@
 import argparse, time, sys
 from urllib.parse import urlparse
 
-import greg.greg
+import greg.commands
 
 # defining the from_date type
 def from_date(string):
