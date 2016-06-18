@@ -25,8 +25,8 @@ import sys
 import re
 import unicodedata
 import string
-from itertools import filterfalse
 from urllib.request import urlretrieve
+from urllib.error import URLError
 
 from pkg_resources import resource_filename
 import feedparser
@@ -266,5 +266,3 @@ def substitute_placeholders(inputstring, placeholders):
                                subtitle=placeholders.sanitizedsubtitle,
                                entrysummary=placeholders.entrysummary)
     return newst
-
-
