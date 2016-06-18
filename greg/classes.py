@@ -27,7 +27,13 @@ the subcommands
 """
 import configparser
 import os.path
+import sys
+import time
 from pkg_resources import resource_filename
+from urllib.parse import urlparse
+from urllib.error import URLError
+
+import aux_functions as aux
 
 config_filename_global = resource_filename(__name__, 'data/greg.conf')
 
@@ -71,7 +77,7 @@ class Session():
         args = self.args
         try:
             if args['datadirectory']:
-                ensure_dir(args['datadirectory'])
+                aux.ensure_dir(args['datadirectory'])
                 return args['datadirectory']
         except KeyError:
             pass
@@ -81,7 +87,7 @@ class Session():
         data_path = config.get(section, 'Data directory',
                                fallback='~/.local/share/greg')
         data_path_expanded = os.path.expanduser(data_path)
-        ensure_dir(data_path_expanded)
+        aux.ensure_dir(data_path_expanded)
         return os.path.expanduser(data_path_expanded)
 
 
@@ -95,7 +101,7 @@ class Feed():
         self.config = self.session.config
         self.name = feed
         if not podcast:
-            self.podcast = parse_podcast(session.feeds[feed]["url"])
+            self.podcast = aux.parse_podcast(session.feeds[feed]["url"])
         else:
             self.podcast = podcast
         self.sync_by_date = self.has_date()
@@ -108,7 +114,7 @@ class Feed():
         except KeyError:
             self.wentwrong = False
         self.info = os.path.join(session.data_dir, feed)
-        self.entrylinks, self.linkdates = parse_feed_info(self.info)
+        self.entrylinks, self.linkdates = aux.parse_feed_info(self.info)
 
     def retrieve_config(self, value, default):
         """
@@ -134,7 +140,7 @@ class Feed():
         tags = [[option.replace(
             "tag_", ""), defaultoptions[option]] for option
             in defaultoptions if "tag_" in option]
-            # these are the tags to be filled
+        # these are the tags to be filled
         return dict(tags)
 
     def retrieve_download_path(self):
@@ -170,7 +176,7 @@ class Feed():
                     # Otherwise, we use download links.
                     print(("I cannot parse the time information of this feed."
                            "I'll use your current local time instead."),
-                            file=sys.stderr, flush=True)
+                          file=sys.stderr, flush=True)
                     sync_by_date = False
         if not sync_by_date:
             session.feeds[name]["date_info"] = "not available"
@@ -179,12 +185,13 @@ class Feed():
         else:
             try:
                 if session.feeds[name]["date_info"] == "not available":
-                    print(("Either this feed has changed, or greg has improved,"
-                           " but we can now parse its time information. "
-                           "This is good, but it also means that (just this "
-                           "time) it's possible that you have missed some entries. "
-                           "You might do a 'greg check -f {}' to make sure that "
-                           "you're not missing out on anything.").format(name))
+                    print(("Either this feed has changed, or greg has "
+                           "improved, but we can now parse its time "
+                           "information. This is good, but it also means that "
+                           "(just this time) it's possible that you have "
+                           "missed some entries. You might do a 'greg check "
+                           "-f {}' to make sure that you're not missing out "
+                           "on anything.").format(name))
             except KeyError:
                 pass
             session.feeds[name]["date_info"] = "available"
@@ -198,12 +205,12 @@ class Feed():
         """
         wanttags = self.retrieve_config('Tag', 'no')
         if wanttags == 'yes':
-            if staggerexists:
+            if aux.staggerexists:
                 willtag = True
             else:
                 willtag = False
-                print(("You want me to tag {0}, but you have not installed the "
-                       "Stagger module. I cannot honour your request.").
+                print(("You want me to tag {0}, but you have not installed "
+                       "the Stagger module. I cannot honour your request.").
                       format(self.name), file=sys.stderr, flush=True)
         else:
             willtag = False
@@ -264,7 +271,7 @@ class Feed():
         mime = self.retrieve_config('mime', 'audio')
         mimedict = {"number": mime}
         # the input that parse_for_download expects
-        return parse_for_download(mimedict)
+        return aux.parse_for_download(mimedict)
 
     def download_entry(self, entry):
         """
@@ -306,7 +313,7 @@ class Feed():
                 except:
                     title = podname
                 try:
-                    sanitizedsummary = htmltotext(entry.summary)
+                    sanitizedsummary = aux.htmltotext(entry.summary)
                     if sanitizedsummary == "":
                         sanitizedsummary = "No summary available"
                 except:
@@ -315,13 +322,13 @@ class Feed():
                     placeholders = Placeholders(
                         self, entry, downloadlinks[podname], podname, title,
                         sanitizedsummary)
-                    placeholders = check_directory(placeholders)
-                    condition = filtercond(placeholders)
+                    placeholders = aux.check_directory(placeholders)
+                    condition = aux.filtercond(placeholders)
                     if condition:
                         print("Downloading {} -- {}".format(title, podname))
-                        download_handler(self, placeholders)
+                        aux.download_handler(self, placeholders)
                         if self.willtag:
-                            tag(placeholders)
+                            aux.tag(placeholders)
                         downloaded = True
                     else:
                         print("Skipping {} -- {}".format(title, podname))
@@ -345,25 +352,22 @@ class Placeholders:
         self.filename = filename
         # self.fullpath = os.path.join(self.directory, self.filename)
         self.title = title.replace("\"", "'")
-        self.filename_title = sanitize(title)
+        self.filename_title = aux.sanitize(title)
         try:
             self.podcasttitle = feed.podcast.title
         except AttributeError:
             self.podcasttitle = feed.name
         try:
-            self.sanitizedsubtitle = htmltotext(feed.podcast.feed.subtitle)
+            self.sanitizedsubtitle = aux.htmltotext(feed.podcast.feed.subtitle)
             if self.sanitizedsubtitle == "":
                 self.sanitizedsubtitle = "No description"
         except AttributeError:
             self.sanitizedsubtitle = "No description"
         self.entrysummary = summary
-        self.filename_podcasttitle = sanitize(self.podcasttitle)
+        self.filename_podcasttitle = aux.sanitize(self.podcasttitle)
         self.name = feed.name
         self.date = tuple(entry.linkdate)
 
     def date_string(self):
         date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")
         return time.strftime(date_format, self.date)
-
-
-
