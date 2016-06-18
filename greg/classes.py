@@ -33,7 +33,7 @@ from pkg_resources import resource_filename
 from urllib.parse import urlparse
 from urllib.error import URLError
 
-import aux_functions as aux
+import greg.aux_functions as aux
 
 config_filename_global = resource_filename(__name__, 'data/greg.conf')
 
