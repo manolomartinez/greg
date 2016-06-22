@@ -27,6 +27,7 @@ import string
 from itertools import filterfalse
 from urllib.request import urlretrieve
 from urllib.parse import urlparse
+from urllib.parse import quote
 from urllib.error import URLError
 from lxml import etree as ET
 
@@ -291,8 +292,10 @@ class Feed():
         downloaded = False
         ignoreenclosures = self.retrieve_config('ignoreenclosures', 'no')
         notype = self.retrieve_config('notype', 'no')
+        # Clean up urls
         if ignoreenclosures == 'no':
             for enclosure in entry.enclosures:
+                enclosure["href"] = quote(enclosure["href"], safe="%/:=&?~#+!$,;'@()*[]") #Clean up url
                 if notype == 'yes':
                     downloadlinks[urlparse(enclosure["href"]).path.split(
                         "/")[-1]] = enclosure["href"]
@@ -313,6 +316,7 @@ class Feed():
                               "option in your greg.conf", file=sys.stderr,
                               flush=True)
         else:
+            entry.link = quote(entry.link, safe="%/:=&?~#+!$,;'@()*[]")
             downloadlinks[urlparse(entry.link).query.split(
                 "/")[-1]] = entry.link
         for podname in downloadlinks:
