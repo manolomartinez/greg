@@ -292,7 +292,6 @@ class Feed():
         downloaded = False
         ignoreenclosures = self.retrieve_config('ignoreenclosures', 'no')
         notype = self.retrieve_config('notype', 'no')
-        # Clean up urls
         if ignoreenclosures == 'no':
             for enclosure in entry.enclosures:
                 enclosure["href"] = quote(enclosure["href"], safe="%/:=&?~#+!$,;'@()*[]") #Clean up url
@@ -316,7 +315,7 @@ class Feed():
                               "option in your greg.conf", file=sys.stderr,
                               flush=True)
         else:
-            entry.link = quote(entry.link, safe="%/:=&?~#+!$,;'@()*[]")
+            entry.link = quote(entry.link, safe="%/:=&?~#+!$,;'@()*[]") #Clean up url
             downloadlinks[urlparse(entry.link).query.split(
                 "/")[-1]] = entry.link
         for podname in downloadlinks:
