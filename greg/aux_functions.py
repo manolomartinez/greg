@@ -194,7 +194,6 @@ def tag(placeholders):
     for tag in tagdict:
         metadata = substitute_placeholders(
             tagdict[tag], placeholders)
-        print("metadata: {}".format(metadata))
         if metadata:
             stagger.util.set_frames(podpath, {tag: metadata})
         else:
