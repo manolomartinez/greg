@@ -21,14 +21,19 @@ from urllib.parse import urlparse
 
 import greg.commands as commands
 
+
 # defining the from_date type
 def from_date(string):
-    try:
-        fd =  list(time.strptime(string, "%Y-%m-%d"))
-    except Exception:
-        msg = "the date should be in the form YYYY-MM-DD"
-        raise argparse.ArgumentTypeError(msg)
-    return fd
+    if string == "now":
+        return list(time.localtime())
+    else:
+        try:
+            fd = list(time.strptime(string, "%Y-%m-%d"))
+        except Exception:
+            msg = "the date should be in the form YYYY-MM-DD"
+            raise argparse.ArgumentTypeError(msg)
+        return fd
+
 
 # defining the url type
 def url(string):
