@@ -20,7 +20,6 @@ Defines the functions corresponding to each of the subcommands
 import os.path
 import pickle
 import sys
-import time
 
 import greg.classes as c
 import greg.aux_functions as aux
@@ -128,22 +127,7 @@ def info(args):
     else:
         feeds = args["names"]
     for feed in feeds:
-        pretty_print(session, feed)
-
-
-def pretty_print(session, feed):
-    """
-    Print the dictionary entry of a feed in a nice way.
-    """
-    print()
-    feed_info = os.path.join(session.data_dir, feed)
-    entrylinks, linkdates = aux.parse_feed_info(feed_info)
-    print(feed)
-    print("-"*len(feed))
-    print(''.join(["    url: ", session.feeds[feed]["url"]]))
-    if linkdates != []:
-        print(''.join(["    Next sync will download from: ", time.strftime(
-            "%d %b %Y %H:%M:%S", tuple(max(linkdates))), "."]))
+        aux.pretty_print(session, feed)
 
 
 def list_for_user(args):
