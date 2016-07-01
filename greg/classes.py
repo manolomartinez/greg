@@ -313,7 +313,7 @@ class Feed():
                 except:
                     title = podname
                 try:
-                    sanitizedsummary = aux.htmltotext(entry.summary)
+                    sanitizedsummary = aux.html_to_text(entry.summary)
                     if sanitizedsummary == "":
                         sanitizedsummary = "No summary available"
                 except:
@@ -358,7 +358,8 @@ class Placeholders:
         except AttributeError:
             self.podcasttitle = feed.name
         try:
-            self.sanitizedsubtitle = aux.htmltotext(feed.podcast.feed.subtitle)
+            self.sanitizedsubtitle = aux.html_to_text(
+                feed.podcast.feed.subtitle)
             if self.sanitizedsubtitle == "":
                 self.sanitizedsubtitle = "No description"
         except AttributeError:

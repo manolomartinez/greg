@@ -105,7 +105,7 @@ def parse_podcast(url):
     return podcast
 
 
-def htmltotext(data):
+def html_to_text(data):
     if beautifulsoupexists:
         beautify = BeautifulSoup(data, "lxml")
         sanitizeddata = beautify.get_text()
