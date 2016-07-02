@@ -128,6 +128,11 @@ If we keep it, we might want to start `sync`ing from, say, the 30th of April,
 
     greg edit PhilosophyBites -d 2013-4-30
 
+We may also use the `now` keyword to instruct greg to start syncing from now
+on:
+
+    greg edit PhilosophyBites -d now
+
 `-d` or `--downloadfrom` change the date after which Greg should start
 downloading episodes when it syncs. Currently, the only two things one can
 `edit` in a feed are the download-from date and `--url` -- but many more things
