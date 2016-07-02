@@ -255,15 +255,19 @@ def pretty_print(session, feed):
     """
     Print the dictionary entry of a feed in a nice way.
     """
-    print()
-    feed_info = os.path.join(session.data_dir, feed)
-    entrylinks, linkdates = parse_feed_info(feed_info)
-    print(feed)
-    print("-"*len(feed))
-    print(''.join(["    url: ", session.feeds[feed]["url"]]))
-    if linkdates != []:
-        print(''.join(["    Next sync will download from: ", time.strftime(
-            "%d %b %Y %H:%M:%S", tuple(max(linkdates))), "."]))
+    if feed in session.feeds:
+        print()
+        feed_info = os.path.join(session.data_dir, feed)
+        entrylinks, linkdates = parse_feed_info(feed_info)
+        print(feed)
+        print("-"*len(feed))
+        print(''.join(["    url: ", session.feeds[feed]["url"]]))
+        if linkdates != []:
+            print(''.join(["    Next sync will download from: ", time.strftime(
+                "%d %b %Y %H:%M:%S", tuple(max(linkdates))), "."]))
+    else:
+        print("You don't have a feed called {}.".format(feed), file=sys.stderr,
+              flush=True)
 
 
 def substitute_placeholders(inputstring, placeholders):
