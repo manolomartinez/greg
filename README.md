@@ -43,7 +43,7 @@ The normal pip `install --user` is disabled for homebrew Python 3, so you cannot
 To edit the configuration for greg, copy the system-wide [greg.conf](https://github.com/manolomartinez/greg/blob/master/greg/data/greg.conf) file to your local config folder:
 
 ```
-cp `greg retrieveglobalconf` ~/.config/greg/greg.conf
+mkdir -p ~/.config/greg && cp `greg retrieveglobalconf` ~/.config/greg/greg.conf
 ```
 
 Then open and edit `~/.config/greg/greg.conf` in a text editor. The configuration file is self-explanatory.
