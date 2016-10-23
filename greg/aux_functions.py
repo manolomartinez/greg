@@ -220,6 +220,7 @@ def download_handler(feed, placeholders):
     if value == 'greg':
         while os.path.isfile(placeholders.fullpath):
             placeholders.fullpath = placeholders.fullpath + '_'
+            placeholders.filename = placeholders.filename + '_'
         urlretrieve(placeholders.link, placeholders.fullpath)
     else:
         value_list = shlex.split(value)
