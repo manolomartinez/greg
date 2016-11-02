@@ -6,7 +6,7 @@ some of the functionality of the excellent
 
 ## Installation
 
-greg requires Python 3.
+greg requires Python 3.3+
 
 ### Install via pip
 
