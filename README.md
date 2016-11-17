@@ -6,7 +6,7 @@ some of the functionality of the excellent
 
 ## Installation
 
-greg requires Python 3.
+greg requires Python 3.3+
 
 ### Install via pip
 
@@ -62,7 +62,7 @@ The normal pip `install --user` is disabled for homebrew Python 3, so you cannot
 To edit the configuration for greg, copy the system-wide [greg.conf](https://github.com/manolomartinez/greg/blob/master/greg/data/greg.conf) file to your local config folder:
 
 ```
-cp `greg retrieveglobalconf` ~/.config/greg/greg.conf
+mkdir -p ~/.config/greg && cp `greg retrieveglobalconf` ~/.config/greg/greg.conf
 ```
 
 Then open and edit `~/.config/greg/greg.conf` in a text editor. The configuration file is self-explanatory.
@@ -146,6 +146,11 @@ If we keep it, we might want to start `sync`ing from, say, the 30th of April,
 2013, on. So we edit the feed information
 
     greg edit PhilosophyBites -d 2013-4-30
+
+We may also use the `now` keyword to instruct greg to start syncing from now
+on:
+
+    greg edit PhilosophyBites -d now
 
 `-d` or `--downloadfrom` change the date after which Greg should start
 downloading episodes when it syncs. Currently, the only two things one can
