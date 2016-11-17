@@ -12,7 +12,9 @@ depends=('python-feedparser')
 optdepends=('python3-stagger-svn: writing metadata'
   'wget: alternative downloadhandler'
 	'aria2: alternative downloadhandler'
-	'python-beautifulsoup4: convert html to text for tagging')
+	'python-beautifulsoup4: convert html to text for tagging'
+    'python-argcomplete: tab completion'
+    'python-lxml: nicer opml formatting')
 makedepends=('git')
 provides=('greg')
 conflicts=('greg')

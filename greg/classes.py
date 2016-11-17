@@ -31,6 +31,7 @@ import sys
 import time
 from pkg_resources import resource_filename
 from urllib.parse import urlparse
+from urllib.parse import quote
 from urllib.error import URLError
 
 import greg.aux_functions as aux
@@ -283,6 +284,7 @@ class Feed():
         notype = self.retrieve_config('notype', 'no')
         if ignoreenclosures == 'no':
             for enclosure in entry.enclosures:
+                enclosure["href"] = quote(enclosure["href"], safe="%/:=&?~#+!$,;'@()*[]") #Clean up url
                 if notype == 'yes':
                     downloadlinks[urlparse(enclosure["href"]).path.split(
                         "/")[-1]] = enclosure["href"]
@@ -303,6 +305,7 @@ class Feed():
                               "option in your greg.conf", file=sys.stderr,
                               flush=True)
         else:
+            entry.link = quote(entry.link, safe="%/:=&?~#+!$,;'@()*[]") #Clean up url
             downloadlinks[urlparse(entry.link).query.split(
                 "/")[-1]] = entry.link
         for podname in downloadlinks:

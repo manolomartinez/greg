@@ -31,6 +31,25 @@ Save `~/.profile` and run the following command in a terminal to refresh the sys
 
 Now run `greg` and you should see the greg help text displayed in your terminal.
 
+### Completion support
+
+To enable support for command line completion in bash or zsh, install the python module [argcomplete](https://pypi.python.org/pypi/argcomplete).
+
+For bash, add the following line to `~/.bashrc`:
+
+`eval "$(register-python-argcomplete greg)"`
+
+Zsh support requires adding the following lines to `~/.zshrc`:
+
+```
+autoload -U bashcompinit && bashcompinit
+eval "$(register-python-argcomplete greg)"
+```
+
+Then load the changes by running `source ~/.bashrc` or `source ~/.zshrc`.
+
+See the [argcomplete](https://pypi.python.org/pypi/argcomplete) documentation for further details.
+
 ### Installing via homebrew python3
 
 The normal pip `install --user` is disabled for homebrew Python 3, so you cannot follow the above instructions. You have 2 options:
