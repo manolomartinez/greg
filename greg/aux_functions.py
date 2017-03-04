@@ -26,7 +26,7 @@ import re
 import time
 import unicodedata
 import string
-from urllib.request import urlretrieve
+import urllib
 from urllib.error import URLError
 
 from pkg_resources import resource_filename
@@ -221,7 +221,11 @@ def download_handler(feed, placeholders):
         while os.path.isfile(placeholders.fullpath):
             placeholders.fullpath = placeholders.fullpath + '_'
             placeholders.filename = placeholders.filename + '_'
-        urlretrieve(placeholders.link, placeholders.fullpath)
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+        data = opener.open(placeholders.link)
+        with open(placeholders.fullpath, 'wb+') as f:
+            f.write(data.read())
     else:
         value_list = shlex.split(value)
         instruction_list = [substitute_placeholders(part, placeholders) for
