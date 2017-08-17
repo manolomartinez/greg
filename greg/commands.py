@@ -193,11 +193,14 @@ def check(args):
         url = args["url"]
         name = "DEFAULT"
     else:
-        try:
-            url = session.feeds[args["feed"]]["url"]
-            name = args["feed"]
-        except KeyError:
-            sys.exit("You don't appear to have a feed with that name.")
+        for i in session.feeds.keys():
+            if args["feed"].lower() in i.lower():
+                match = i
+                url = session.feeds[match]["url"]
+                name = args["feed"]
+                break
+        else:
+            sys.exit("You don't appear to have a feed matching that name.")
     podcast = aux.parse_podcast(url)
     for entry in enumerate(podcast.entries):
         listentry = list(entry)
