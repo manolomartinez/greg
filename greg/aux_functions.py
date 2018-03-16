@@ -26,7 +26,7 @@ import re
 import time
 import unicodedata
 import string
-from urllib.request import urlretrieve
+from urllib.request import urlopen
 from urllib.error import URLError
 
 from pkg_resources import resource_filename
@@ -218,10 +218,18 @@ def download_handler(feed, placeholders):
     """
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
-        while os.path.isfile(placeholders.fullpath):
-            placeholders.fullpath = placeholders.fullpath + '_'
-            placeholders.filename = placeholders.filename + '_'
-        urlretrieve(placeholders.link, placeholders.fullpath)
+        with urlopen(placeholders.link) as fin:
+            # check if request went ok
+            if fin.getcode() != 200:
+                raise URLError
+            # check if fullpath allready exists
+            while os.path.isfile(placeholders.fullpath):
+                placeholders.filename = placeholders.filename + '_'
+                placeholders.fullpath = os.path.join(
+                    placeholders.directory, placeholders.filename)
+            # write content to file
+            with open(placeholders.fullpath,'wb') as fout:
+                fout.write(fin.read())
     else:
         value_list = shlex.split(value)
         instruction_list = [substitute_placeholders(part, placeholders) for
