@@ -254,7 +254,13 @@ def parse_feed_info(infofile):
                         # time.struct_time() object
                     else:
                         print("Error reading history entry for {}. Contents: {}".format(infofile, history))
+
+                    continue
                 except json.JSONDecodeError:
+                    # Ignore JSONDecodeErrors as we'll fall through to our old method
+                    pass
+
+                try:
                     # Fallback to old buggy format
                     entrylinks.append(line.split(sep=' ')[0])
                     # This is the list of already downloaded entry links
@@ -262,6 +268,15 @@ def parse_feed_info(infofile):
                     # This is the list of already downloaded entry dates
                     # Note that entrydates are lists, converted from a
                     # time.struct_time() object
+                    continue
+                except SyntaxError:
+                    # this means the eval above failed. We just ignore it
+                    pass
+
+                print("Invalid history line. Possibly broken old format. Ignoring line, but this may cause an episode "
+                      "to download again")
+                print(line)
+
     except FileNotFoundError:
         pass
     return entrylinks, linkdates
