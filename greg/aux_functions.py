@@ -26,6 +26,7 @@ import re
 import time
 import unicodedata
 import string
+import json
 from urllib.request import urlretrieve
 from urllib.error import URLError
 
@@ -241,12 +242,26 @@ def parse_feed_info(infofile):
     try:
         with open(infofile, 'r') as previous:
             for line in previous:
-                entrylinks.append(line.split(sep=' ')[0])
-                # This is the list of already downloaded entry links
-                linkdates.append(eval(line.split(sep=' ', maxsplit=1)[1]))
-                # This is the list of already downloaded entry dates
-                # Note that entrydates are lists, converted from a
-                # time.struct_time() object
+                # Try importing as new json format
+                try:
+                    history = json.loads(line)
+                    if 'entrylink' in history and 'linkdate' in history:
+                        entrylinks.append(history['entrylink'])
+                        # This is the list of already downloaded entry links
+                        linkdates.append(history['linkdate'])
+                        # This is the list of already downloaded entry dates
+                        # Note that entrydates are lists, converted from a
+                        # time.struct_time() object
+                    else:
+                        print("Error reading history entry for {}. Contents: {}".format(infofile, history))
+                except json.JSONDecodeError:
+                    # Fallback to old buggy format
+                    entrylinks.append(line.split(sep=' ')[0])
+                    # This is the list of already downloaded entry links
+                    linkdates.append(eval(line.split(sep=' ', maxsplit=1)[1]))
+                    # This is the list of already downloaded entry dates
+                    # Note that entrydates are lists, converted from a
+                    # time.struct_time() object
     except FileNotFoundError:
         pass
     return entrylinks, linkdates

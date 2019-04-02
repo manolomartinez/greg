@@ -29,6 +29,7 @@ import configparser
 import os.path
 import sys
 import time
+import json
 from pkg_resources import resource_filename
 from urllib.parse import urlparse
 from urllib.error import URLError
@@ -337,8 +338,8 @@ class Feed():
                         with open(self.info, 'a') as current:
                             # We write to file this often to ensure that
                             # downloaded entries count as downloaded.
-                            current.write(''.join([podname, ' ',
-                                          str(entry.linkdate), '\n']))
+                            json.dump({'entrylink': podname, 'linkdate': entry.linkdate}, current)
+                            current.write('\n')
                 except URLError:
                     sys.exit(("... something went wrong. "
                              "Are you connected to the internet?"))
