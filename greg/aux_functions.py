@@ -210,8 +210,8 @@ def get_date(line):
         if 'entrylink' in history and 'linkdate' in history:
             return history['linkdate']
         else:
-            print("Error reading history entry for {}. Contents:
-                    {}".format(infofile, history), file=sys.stderr,
+            print("Error reading history entry for {}. Contents:"
+                    "{}".format(infofile, history), file=sys.stderr,
                     flush=True)
         continue
     except json.JSONDecodeError:
@@ -270,8 +270,8 @@ def parse_feed_info(infofile):
                         # Note that entrydates are lists, converted from a
                         # time.struct_time() object
                     else:
-                        print("Error reading history entry for {}. Contents:
-                                {}".format(infofile, history), file=sys.stderr,
+                        print("Error reading history entry for {}. Contents:"
+                                "{}".format(infofile, history), file=sys.stderr,
                                 flush=True)
 
                     continue
