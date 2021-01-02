@@ -205,6 +205,18 @@ def filtercond(placeholders):
 
 
 def get_date(line):
+    try:
+        history = json.loads(line)
+        if 'entrylink' in history and 'linkdate' in history:
+            return history['linkdate']
+        else:
+            print("Error reading history entry for {}. Contents:
+                    {}".format(infofile, history), file=sys.stderr,
+                    flush=True)
+        continue
+    except json.JSONDecodeError:
+        # Ignore JSONDecodeErrors as we'll fall through to our old method
+        pass
     date = eval(line.split(sep=' ', maxsplit=1)[1])
     return date
 
