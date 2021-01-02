@@ -211,9 +211,9 @@ def get_date(line):
             return history['linkdate']
         else:
             print("Error reading history entry for {}. Contents:"
-                    "{}".format(infofile, history), file=sys.stderr,
-                    flush=True)
-        continue
+                   "{}".format(infofile, history), file=sys.stderr,
+                   flush=True)
+            return False
     except json.JSONDecodeError:
         # Ignore JSONDecodeErrors as we'll fall through to our old method
         pass
