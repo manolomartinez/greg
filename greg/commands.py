@@ -17,6 +17,7 @@
 """
 Defines the functions corresponding to each of the subcommands
 """
+import json
 import os.path
 import pickle
 import sys
@@ -77,7 +78,6 @@ def edit(args):  # Edits the information associated with a certain feed
                        "Using --downloadfrom might not have the"
                        "results that you expect.").
                       format(args["name"]), file=sys.stderr, flush=True)
-            line = ' '.join(["currentdate", str(value), "\n"])
             # A dummy entry with the new downloadfrom date.
             try:
                 # Remove from the feed file all entries
@@ -86,9 +86,13 @@ def edit(args):  # Edits the information associated with a certain feed
                     previouslist = previous.readlines()
                     current = [aline for aline in previouslist if value >
                                aux.get_date(aline)]
-                    current.append(line)
                 with open(feed_info, 'w') as currentfile:
                     currentfile.writelines(current)
+                with open(feed_info, 'a') as currentfile:
+                    json.dump({'entrylink': "added by the edit command",
+                        'linkdate': value}, currentfile)
+                    currentfile.write('\n')
+
             except FileNotFoundError:
                 # Write the file with a dummy entry with the right date
                 with open(feed_info, 'w') as currentfile:
