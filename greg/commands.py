@@ -103,7 +103,7 @@ def remove(args):
     if not args["name"] in session.feeds:
         sys.exit("You don't have a feed with that name.")
     inputtext = ("Are you sure you want to remove the {} "
-                 " feed? (y/N) ").format(args["name"])
+                 "feed? (y/N) ").format(args["name"])
     reply = input(inputtext)
     if reply != "y" and reply != "Y":
         return 0
