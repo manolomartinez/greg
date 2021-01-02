@@ -258,7 +258,9 @@ def parse_feed_info(infofile):
                         # Note that entrydates are lists, converted from a
                         # time.struct_time() object
                     else:
-                        print("Error reading history entry for {}. Contents: {}".format(infofile, history))
+                        print("Error reading history entry for {}. Contents:
+                                {}".format(infofile, history), file=sys.stderr,
+                                flush=True)
 
                     continue
                 except json.JSONDecodeError:
@@ -279,7 +281,7 @@ def parse_feed_info(infofile):
                     pass
 
                 print("Invalid history line. Possibly broken old format. Ignoring line, but this may cause an episode "
-                      "to download again")
+                      "to download again", file=sys.stderr, flush=True)
                 print(line)
 
     except FileNotFoundError:
