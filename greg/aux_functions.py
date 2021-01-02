@@ -271,14 +271,12 @@ def parse_feed_info(infofile):
                         # time.struct_time() object
                     else:
                         print("Error reading history entry for {}. Contents:"
-                                "{}".format(infofile, history), file=sys.stderr,
-                                flush=True)
-
+                              "{}".format(infofile, history), file=sys.stderr,
+                              flush=True) 
                     continue
                 except json.JSONDecodeError:
                     # Ignore JSONDecodeErrors as we'll fall through to our old method
                     pass
-
                 try:
                     # Fallback to old buggy format
                     entrylinks.append(line.split(sep=' ')[0])
