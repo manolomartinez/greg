@@ -285,14 +285,11 @@ def parse_feed_info(infofile):
                     # This is the list of already downloaded entry dates
                     # Note that entrydates are lists, converted from a
                     # time.struct_time() object
-                    continue
                 except SyntaxError:
                     # this means the eval above failed. We just ignore it
-                    pass
-
-                print("Invalid history line. Possibly broken old format. Ignoring line, but this may cause an episode "
-                      "to download again", file=sys.stderr, flush=True)
-                print(line)
+                    print("Invalid history line. Possibly broken old format. Ignoring line, but this may cause an episode "
+                          "to download again", file=sys.stderr, flush=True)
+                    print(line)
 
     except FileNotFoundError:
         pass
