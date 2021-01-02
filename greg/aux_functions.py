@@ -192,12 +192,9 @@ def tag(placeholders):
     except configparser.NoSectionError:
         pass
     for tag in tagdict:
-        metadata = substitute_placeholders(
-            tagdict[tag], placeholders)
-        if metadata:
-            stagger.util.set_frames(podpath, {tag: metadata})
-        else:
-            stagger.util.remove_frames(podpath, tag)
+        metadata = substitute_placeholders(tagdict[tag], placeholders)
+        tagdict[tag] = metadata
+    stagger.util.set_frames(podpath, tagdict)
 
 
 def filtercond(placeholders):
