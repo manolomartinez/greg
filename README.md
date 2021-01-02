@@ -165,7 +165,7 @@ Let us add another feed:
 
 This is a great program on ancient music at the Spanish public radio. The thing
 is, these guys do not tag their episodes, which is bad for most portable media
-players. Greg uses [stagger](http://pypi.python.org/pypi/stagger/0.4.2) (as an
+players. Greg uses [stagger](http://pypi.python.org/pypi/stagger/) (as an
 optional dependency) to tag podcasts, if one so wishes. By default, it uses the
 podcast name for the *artist* tag, and the entry title for the *title* tag. To
 enable tagging for MusicaAntigua, copy the system-wide config file locally. (see [Configuration](#configuration) above)
