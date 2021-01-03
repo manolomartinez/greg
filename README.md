@@ -200,8 +200,14 @@ You could also have a couple of types there, as in `mime = audio, video`; or
 any other type, `mime = torrent`, or whatever.
 
 Another useful thing that you can change in the config file is the download
-handler; Greg by default uses `urllib.request.urlretrieve`, but you can use
-whatever you want. I, for example, have
+handler; Greg by default uses `urllib.request` from the Python standard
+library, but you can use whatever you want. Indeed, it's advisable that you use
+an external program for this: the default downloader just downloads,
+period---it doesn't [follow
+redirects](https://github.com/manolomartinez/greg/issues/98) or does any of the
+other fancy stuff that, e.g., `wget` or `curl` do. 
+
+I, for example, have
 
     downloadhandler = wget {link} -P {directory}
 
