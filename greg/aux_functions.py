@@ -33,12 +33,11 @@ from urllib.error import URLError
 from pkg_resources import resource_filename
 import feedparser
 
-try:  # Stagger is an optional dependency
-    import stagger
-    from stagger.id3 import *
-    staggerexists = True
+try:  # EyeD3 is an optional dependency
+    import eyed3
+    eyed3exists = True
 except ImportError:
-    staggerexists = False
+    eyed3exists = False
 
 try:  # beautifulsoup4 is an optional dependency
     from bs4 import BeautifulSoup
@@ -195,7 +194,11 @@ def tag(placeholders):
     for tag in tagdict:
         metadata = substitute_placeholders(tagdict[tag], placeholders)
         tagdict[tag] = metadata
-    stagger.util.set_frames(podpath, tagdict)
+    file_to_tag = eyed3.load(podpath)
+    for mytag in tagdict:
+        file_to_tag.tag.mytag = tagdict[mytag]
+    file_to_tag.tag.save()
+    
 
 
 def filtercond(placeholders):
