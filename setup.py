@@ -5,6 +5,7 @@ setup(
     name='Greg',
     version='0.4.7',
     install_requires=['feedparser'],
+    extras_requires={'tagging' : ['eyeD3']},
     description='A command-line podcast aggregator',
     author='Manolo Martínez',
     author_email='manolo@austrohungaro.com',
