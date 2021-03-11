@@ -206,12 +206,12 @@ class Feed():
         """
         wanttags = self.retrieve_config('Tag', 'no')
         if wanttags == 'yes':
-            if aux.staggerexists:
+            if aux.eyed3exists:
                 willtag = True
             else:
                 willtag = False
                 print(("You want me to tag {0}, but you have not installed "
-                       "the Stagger module. I cannot honour your request.").
+                       "the EyeD3 module. I cannot honour your request.").
                       format(self.name), file=sys.stderr, flush=True)
         else:
             willtag = False
