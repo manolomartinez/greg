@@ -319,30 +319,26 @@ class Feed():
                         sanitizedsummary = "No summary available"
                 except:
                     sanitizedsummary = "No summary available"
-                try:
-                    placeholders = Placeholders(
-                        self, entry, downloadlinks[podname], podname, title,
-                        sanitizedsummary)
-                    placeholders = aux.check_directory(placeholders)
-                    condition = aux.filtercond(placeholders)
-                    if condition:
-                        print("Downloading {} -- {}".format(title, podname))
-                        aux.download_handler(self, placeholders)
-                        if self.willtag:
-                            aux.tag(placeholders)
-                        downloaded = True
-                    else:
-                        print("Skipping {} -- {}".format(title, podname))
-                        downloaded = False
-                    if self.info:
-                        with open(self.info, 'a') as current:
-                            # We write to file this often to ensure that
-                            # downloaded entries count as downloaded.
-                            json.dump({'entrylink': podname, 'linkdate': entry.linkdate}, current)
-                            current.write('\n')
-                except URLError:
-                    sys.exit(("... something went wrong. "
-                             "Are you connected to the internet?"))
+                placeholders = Placeholders(
+                    self, entry, downloadlinks[podname], podname, title,
+                    sanitizedsummary)
+                placeholders = aux.check_directory(placeholders)
+                condition = aux.filtercond(placeholders)
+                if condition:
+                    print("Downloading {} -- {}".format(title, podname))
+                    aux.download_handler(self, placeholders)
+                    if self.willtag:
+                        aux.tag(placeholders)
+                    downloaded = True
+                else:
+                    print("Skipping {} -- {}".format(title, podname))
+                    downloaded = False
+                if self.info:
+                    with open(self.info, 'a') as current:
+                        # We write to file this often to ensure that
+                        # downloaded entries count as downloaded.
+                        json.dump({'entrylink': podname, 'linkdate': entry.linkdate}, current)
+                        current.write('\n')
         return downloaded
 
 
