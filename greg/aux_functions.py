@@ -122,8 +122,6 @@ def check_directory(placeholders):
     feed = placeholders.feed
     args = feed.args
     placeholders.directory = "This very directory"  # wink, wink
-    placeholders.fullpath = os.path.join(
-        placeholders.directory, placeholders.filename)
     try:
         if args["downloaddirectory"]:
             ensure_dir(args["downloaddirectory"])
@@ -143,8 +141,6 @@ def check_directory(placeholders):
             subdnametemplate, placeholders)
         placeholders.directory = os.path.join(download_path, subdname)
     ensure_dir(placeholders.directory)
-    placeholders.fullpath = os.path.join(
-        placeholders.directory, placeholders.filename)
     return placeholders
 
 
@@ -233,12 +229,10 @@ def download_handler(feed, placeholders):
             if fin.getcode() != 200:
                 raise URLError
             # check if fullpath allready exists
-            while os.path.isfile(placeholders.fullpath):
+            while os.path.isfile(placeholders.get_fullpath()):
                 placeholders.filename = placeholders.filename + '_'
-                placeholders.fullpath = os.path.join(
-                    placeholders.directory, placeholders.filename)
             # write content to file
-            with open(placeholders.fullpath,'wb') as fout:
+            with open(placeholders.get_fullpath(),'wb') as fout:
                 fout.write(fin.read())
     else:
         value_list = shlex.split(value)
@@ -322,7 +316,7 @@ def substitute_placeholders(inputstring, placeholders):
     newst = inputstring.format(link=placeholders.link,
                                filename=placeholders.filename,
                                directory=placeholders.directory,
-                               fullpath=placeholders.fullpath,
+                               fullpath=placeholders.get_fullpath(),
                                title=placeholders.title,
                                filename_title=placeholders.filename_title,
                                date=placeholders.date_string(),
