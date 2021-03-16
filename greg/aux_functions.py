@@ -233,7 +233,7 @@ def download_handler(feed, placeholders):
                 raise URLError
             # check if fullpath allready exists
             while os.path.isfile(placeholders.get_fullpath()):
-                placeholders.filename = placeholders.filename + '_'
+                placeholders.filename = placeholders.get_file_basename() + '_.' + placeholders.get_extension()
             # write content to file
             with open(placeholders.get_fullpath(),'wb') as fout:
                 fout.write(fin.read())
@@ -329,5 +329,6 @@ def substitute_placeholders(inputstring, placeholders):
                                name=placeholders.name,
                                subtitle=placeholders.sanitizedsubtitle,
                                entrysummary=placeholders.entrysummary,
-                               extension=placeholders.extension)
+                               extension=placeholders.get_extension(),
+                               file_basename=placeholders.get_file_basename())
     return newst

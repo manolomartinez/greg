@@ -368,10 +368,15 @@ class Placeholders:
         self.filename_podcasttitle = aux.sanitize(self.podcasttitle)
         self.name = feed.name
         self.date = tuple(entry.linkdate)
-        self.extension = filename.split(".")[-1]
     
     def get_fullpath(self):
         return os.path.join(self.directory, self.filename)
+
+    def get_extension(self):
+        return self.filename.split(".")[-1]
+
+    def get_file_basename(self):
+        return ".".join(self.filename.split(".")[0:-1])
 
     def date_string(self):
         date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")
