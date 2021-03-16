@@ -351,7 +351,6 @@ class Placeholders:
         self.feed = feed
         self.link = link
         self.filename = filename
-        # self.fullpath = os.path.join(self.directory, self.filename)
         self.title = title.replace("\"", "'")
         self.filename_title = aux.sanitize(title)
         try:
@@ -369,6 +368,25 @@ class Placeholders:
         self.filename_podcasttitle = aux.sanitize(self.podcasttitle)
         self.name = feed.name
         self.date = tuple(entry.linkdate)
+    
+    def get_fullpath(self):
+        """
+        Returns the current directory path + filename using `os.path.join`
+        """
+        return os.path.join(self.directory, self.filename)
+
+    def get_extension(self):
+        """
+        Returns the current extension using a best-guess method (taking everything after the last dot).
+        """
+        return self.filename.split(".")[-1]
+
+    def get_file_basename(self):
+        """
+        Returns the current basename (minus extension) of the current filename using a best-guess method
+        (stripping everything after the  last  dot)
+        """
+        return ".".join(self.filename.split(".")[0:-1])
 
     def date_string(self):
         date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")

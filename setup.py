@@ -5,6 +5,9 @@ setup(
     name='Greg',
     version='0.4.7',
     install_requires=['feedparser'],
+    extras_require={
+        'tagging': ['beautifulsoup4', 'stagger', 'lxml'],
+    },
     description='A command-line podcast aggregator',
     author='Manolo Martínez',
     author_email='manolo@austrohungaro.com',
