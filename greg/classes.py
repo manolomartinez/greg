@@ -368,6 +368,7 @@ class Placeholders:
         self.filename_podcasttitle = aux.sanitize(self.podcasttitle)
         self.name = feed.name
         self.date = tuple(entry.linkdate)
+        self.extension = filename.split(".")[-1]
     
     def get_fullpath(self):
         return os.path.join(self.directory, self.filename)

@@ -170,7 +170,7 @@ def tag(placeholders):
     Tag the file at podpath with the information in podcast and entry
     """
     # We first recover the name of the file to be tagged...
-    template = placeholders.feed.retrieve_config("file_to_tag", "{filename}")
+    template = placeholders.feed.retrieve_config("filename_template", "{filename}")
     filename = substitute_placeholders(template, placeholders)
     podpath = os.path.join(placeholders.directory, filename)
     # ... and this is it
@@ -224,6 +224,9 @@ def download_handler(feed, placeholders):
     """
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
+        # Get the name of the output file and set in placeholders
+        template = placeholders.feed.retrieve_config("filename_template", "{filename}")
+        placeholders.filename = substitute_placeholders(template, placeholders)
         with urlopen(placeholders.link) as fin:
             # check if request went ok
             if fin.getcode() != 200:
@@ -325,5 +328,6 @@ def substitute_placeholders(inputstring, placeholders):
                                placeholders.filename_podcasttitle,
                                name=placeholders.name,
                                subtitle=placeholders.sanitizedsubtitle,
-                               entrysummary=placeholders.entrysummary)
+                               entrysummary=placeholders.entrysummary,
+                               extension=placeholders.extension)
     return newst
