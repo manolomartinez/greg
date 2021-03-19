@@ -111,7 +111,7 @@ class Feed():
             self.defaulttagdict = self.default_tag_dict()
         self.mime = self.retrieve_mime()
         try:
-            self.wentwrong = "URLError" in str(self.podcast["bozo_exception"])
+            self.wentwrong = str(self.podcast["bozo_exception"])
         except KeyError:
             self.wentwrong = False
         self.info = os.path.join(session.data_dir, feed)

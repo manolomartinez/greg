@@ -183,8 +183,8 @@ def sync(args):
                     break
             print("Done")
         else:
-            msg = ''.join(["I cannot sync ", feed,
-                           " just now. Are you connected to the internet?"])
+            msg = ''.join(["I cannot sync ", feed, " just now: ",
+                feed.wentwrong)
             print(msg, file=sys.stderr, flush=True)
 
 
