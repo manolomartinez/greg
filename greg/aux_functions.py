@@ -76,9 +76,11 @@ feedparser.registerDateHandler(feedburner_date_handler)
 
 def sanitize(data):
     # sanestring = ''.join([x if x.isalnum() else "_" for x in string])
-    sanestring = ''.join(x if x.isalnum() else "" for x in
+    sanestring = ''.join(x if x.isalnum() else " " for x in
                          unicodedata.normalize('NFKD', data)
                          if x in string.printable)
+    sanestring = ''.join(sanestring.split()) # Just one space where there are
+    # many
     return sanestring
 
 
