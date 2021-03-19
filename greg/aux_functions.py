@@ -79,7 +79,7 @@ def sanitize(data):
     sanestring = ''.join(x if x.isalnum() else " " for x in
                          unicodedata.normalize('NFKD', data)
                          if x in string.printable)
-    sanestring = ''.join(sanestring.split()) # Just one space where there are
+    sanestring = ' '.join(sanestring.split()) # Just one space where there are
     # many
     return sanestring
 
