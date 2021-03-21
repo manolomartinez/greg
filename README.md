@@ -8,7 +8,7 @@ of the functionality of the excellent
 
 Use [pip](https://pip.pypa.io/en/stable/):
 
-`pip3 install --user greg`
+`pip install --user greg`
 
 If you run [Arch Linux](https://archlinux.org/), there is also an [AUR
 package](https://aur.archlinux.org/packages/greg-git/).
