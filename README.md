@@ -1,42 +1,17 @@
 # greg
 
-A command-line podcast aggregator, written in python 3. It basically exposes
-some of the functionality of the excellent
+A command-line podcast aggregator, written in python. It basically exposes some
+of the functionality of the excellent
 [feedparser](http://pypi.python.org/pypi/feedparser).
 
 ## Installation
 
-greg requires Python 3.3+
-
-### Install via pip
-
-These instructions will not work with Python 3 installed via homebrew. See the [section below](#installing-via-homebrew-python3) for work-arounds.
-
-When using pip it's preferable to install packages locally.
+Use [pip](https://pip.pypa.io/en/stable/):
 
 `pip3 install --user greg`
 
-This installs greg to `~/.local/bin`. Ensure this directory is included in your system path by adding these lines to `~/.profile`:
-
-```
-# set PATH so it includes user's .local/bin if it exists
-if [ -d "$HOME/.local/bin" ] ; then
-    PATH="$HOME/.local/bin:$PATH"
-fi
-```
-
-Save `~/.profile` and run the following command in a terminal to refresh the system path:
-
-`source ~/.profile`
-
-Now run `greg` and you should see the greg help text displayed in your terminal.
-
-### Installing via homebrew python3
-
-The normal pip `install --user` is disabled for homebrew Python 3, so you cannot follow the above instructions. You have 2 options:
-
-1. Create a workaround by setting a custom local install location. Follow [these instructions](https://github.com/Homebrew/homebrew/blob/master/share/doc/homebrew/Homebrew-and-Python.md) in the homebrew docs.
-2. Use sudo: `sudo pip3 install greg`
+If you run [Arch Linux](https://archlinux.org/), there is also an [AUR
+package](https://aur.archlinux.org/packages/greg-git/).
 
 ## Configuration
 
