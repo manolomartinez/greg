@@ -92,11 +92,12 @@ def edit(args):  # Edits the information associated with a certain feed
                     json.dump({'entrylink': "added by the edit command",
                         'linkdate': value}, currentfile)
                     currentfile.write('\n')
-
             except FileNotFoundError:
                 # Write the file with a dummy entry with the right date
                 with open(feed_info, 'w') as currentfile:
-                    currentfile.write(line)
+                    json.dump({'entrylink': "added by the edit command",
+                        'linkdate': value}, currentfile)
+                    currentfile.write('\n')
 
 
 def remove(args):
