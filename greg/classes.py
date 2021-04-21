@@ -33,6 +33,7 @@ import json
 from pkg_resources import resource_filename
 from urllib.parse import urlparse
 from urllib.error import URLError
+from warnings import warn
 
 import greg.aux_functions as aux
 
@@ -110,10 +111,14 @@ class Feed():
         if self.willtag:
             self.defaulttagdict = self.default_tag_dict()
         self.mime = self.retrieve_mime()
-        try:
-            self.wentwrong = str(self.podcast["bozo_exception"])
-        except KeyError:
-            self.wentwrong = False
+        self.wentwrong = False
+        if self.podcast.bozo: # the bozo bit is on, see feedparser docs
+            warning = str(self.podcast["bozo_exception"])
+            if "URLError" in warning:
+                self.wentwrong = warning
+            else:
+                warn("""This feed is malformed (possibly in unimportant ways):
+                        {}""".format(warning), stacklevel=10)
         self.info = os.path.join(session.data_dir, feed)
         self.entrylinks, self.linkdates = aux.parse_feed_info(self.info)
 
