@@ -77,7 +77,7 @@ feedparser.registerDateHandler(feedburner_date_handler)
 def sanitize(data):
     # sanestring = ''.join([x if x.isalnum() else "_" for x in string])
     sanestring = ''.join(x if x.isalnum() else "_" for x in
-                         unicodedata.normalize('NFKD', data)
+                         unicodedata.normalize('NFKD', data))
     return sanestring
 
 
