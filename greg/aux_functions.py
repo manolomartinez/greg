@@ -212,8 +212,10 @@ def tag(placeholders):
     for mytag in tagdict:
         setattr(file_to_tag.tag, mytag, tagdict[mytag])
     if coverart:
+        with open(coverart_filename, 'rb') as imagefile:
+            image = imagefile.read()
         file_to_tag.tag.images.set(
-                type_=3, img_data=coverart_filename, mime_type=coverart_mime) 
+                type_=3, img_data=image, mime_type=coverart_mime) 
     file_to_tag.tag.save()
 
 
