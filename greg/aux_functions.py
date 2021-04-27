@@ -181,10 +181,9 @@ def tag(placeholders):
     if coverart:
         import mimetypes
         coverart_filename = substitute_placeholders(coverart, placeholders)
-        coverart_mime = mimetypes.guess_type(coverart_filename)
-        if not coverart_mime[0]:
-            print("""I couldn't guess the mimetype of this file, please use a
-                    more perspicuous extension""", file=sys.stderr, flush=True)
+        if not os.path.exists(coverart_filename):
+            print("""The file that I was supposed to use as cover art does not
+                    exist.""", file=sys.stderr, flush=True)
             coverart = False
         else:
             coverart_mime = mimetypes.guess_type(coverart_filename)[0]
