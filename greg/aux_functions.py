@@ -186,6 +186,12 @@ def tag(placeholders):
             print("""I couldn't guess the mimetype of this file, please use a
                     more perspicuous extension""", file=sys.stderr, flush=True)
             coverart = False
+        else:
+            coverart_mime = mimetypes.guess_type(coverart_filename)[0]
+            if not coverart_mime:
+                print("""I couldn't guess the mimetype of this file, please use a
+                        more perspicuous extension""", file=sys.stderr, flush=True)
+                coverart = False
     # now we create a dictionary of tags and values
     tagdict = placeholders.feed.defaulttagdict  # these are the defaults
     try:  # We do as if there was a section with potential tag info
