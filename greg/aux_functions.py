@@ -176,7 +176,16 @@ def tag(placeholders):
     filename = substitute_placeholders(template, placeholders)
     podpath = os.path.join(placeholders.directory, filename)
     # ... and this is it
-
+    # We also retrieve the path of a cover image, if there is one
+    coverart = placeholders.feed.retrieve_config("coverart", False)
+    if coverart:
+        import mimetypes
+        coverart_filename = substitute_placeholders(coverart, placeholders)
+        coverart_mime = mimetypes.guess_type(coverart_filename)
+        if not coverart_mime[0]:
+            print("""I couldn't guess the mimetype of this file, please use a
+                    more perspicuous extension""", file=sys.stderr, flush=True)
+            coverart = False
     # now we create a dictionary of tags and values
     tagdict = placeholders.feed.defaulttagdict  # these are the defaults
     try:  # We do as if there was a section with potential tag info
@@ -196,8 +205,10 @@ def tag(placeholders):
     file_to_tag = eyed3.load(podpath)
     for mytag in tagdict:
         setattr(file_to_tag.tag, mytag, tagdict[mytag])
+    if coverart:
+        file_to_tag.tag.images.set(
+                type_=3, img_data=coverart_filename, mime_type=coverart_mime) 
     file_to_tag.tag.save()
-    
 
 
 def filtercond(placeholders):
