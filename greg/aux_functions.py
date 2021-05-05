@@ -194,6 +194,8 @@ def tag(placeholders):
         metadata = substitute_placeholders(tagdict[tag], placeholders)
         tagdict[tag] = metadata
     file_to_tag = eyed3.load(podpath)
+    if file_to_tag.tag == None:
+        file_to_tag.initTag()
     for mytag in tagdict:
         setattr(file_to_tag.tag, mytag, tagdict[mytag])
     file_to_tag.tag.save()
