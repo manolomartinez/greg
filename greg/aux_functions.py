@@ -195,7 +195,10 @@ def tag(placeholders):
         tagdict[tag] = metadata
     file_to_tag = eyed3.load(podpath)
     for mytag in tagdict:
-        setattr(file_to_tag.tag, mytag, tagdict[mytag])
+        if isinstance(getattr(file_to_tag.tag, mytag), eyed3.id3.tag.DltAccessor):
+            getattr(file_to_tag.tag, mytag).set(tagdict[mytag])
+        else:
+            setattr(file_to_tag.tag, mytag, tagdict[mytag])
     file_to_tag.tag.save()
     
 
