@@ -193,6 +193,11 @@ just stream it, like this:
 
     greg download 0 --downloadhandler "mplayer {link}"
 
+If you want to ensure that the downloaded files are in chronological order, you
+can use placeholders to add the date at the beginning, like this:
+
+    downloadhandler = wget {link} -O {directory}/{date}_{filename}
+
 One last thing: if you subscribe to a very active feed, and you are only
 interested in some of the entries, you can filter the feed. For example, if you
 only want to watch TED talks about Google, say, you can add the following line
