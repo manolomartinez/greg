@@ -335,5 +335,6 @@ def substitute_placeholders(inputstring, placeholders):
                                placeholders.filename_podcasttitle,
                                name=placeholders.name,
                                subtitle=placeholders.sanitizedsubtitle,
-                               entrysummary=placeholders.entrysummary)
+                               entrysummary=placeholders.entrysummary,
+                               itunes_episode=placeholders.itunes_episode)
     return newst
