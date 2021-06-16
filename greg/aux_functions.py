@@ -208,13 +208,18 @@ def tag(placeholders):
         metadata = substitute_placeholders(tagdict[tag], placeholders)
         tagdict[tag] = metadata
     file_to_tag = eyed3.load(podpath)
+    if file_to_tag.tag == None:
+        file_to_tag.initTag()
     for mytag in tagdict:
-        setattr(file_to_tag.tag, mytag, tagdict[mytag])
+        if isinstance(getattr(file_to_tag.tag, mytag), eyed3.id3.tag.DltAccessor):
+            getattr(file_to_tag.tag, mytag).set(tagdict[mytag])
+        else:
+            setattr(file_to_tag.tag, mytag, tagdict[mytag])
     if coverart:
         with open(coverart_filename, 'rb') as imagefile:
             image = imagefile.read()
         file_to_tag.tag.images.set(
-                type_=3, img_data=image, mime_type=coverart_mime) 
+                type_=3, img_data=image, mime_type=coverart_mime)
     file_to_tag.tag.save()
 
 
