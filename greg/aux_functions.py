@@ -211,9 +211,13 @@ def tag(placeholders):
     if file_to_tag.tag == None:
         file_to_tag.initTag()
     for mytag in tagdict:
-        if isinstance(getattr(file_to_tag.tag, mytag), eyed3.id3.tag.DltAccessor):
-            getattr(file_to_tag.tag, mytag).set(tagdict[mytag])
-        else:
+        try:
+            attribute = getattr(file_to_tag.tag, mytag)
+            if isinstance(attribute, eyed3.id3.tag.DltAccessor):
+                attribute.set(tagdict[mytag])
+            else:
+                setattr(file_to_tag.tag, mytag, tagdict[mytag])
+        except AttributeError:
             setattr(file_to_tag.tag, mytag, tagdict[mytag])
     if coverart:
         with open(coverart_filename, 'rb') as imagefile:
