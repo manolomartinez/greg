@@ -239,11 +239,15 @@ def download_handler(feed, placeholders):
     """
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
+        filename_placeholders = feed.retrieve_config('downloaded_filename', '{filename}')
+        filename = substitute_placeholders(filename_placeholders, placeholders)
         with urlopen(placeholders.link) as fin:
             # check if request went ok
             if fin.getcode() != 200:
                 raise URLError
-            # check if fullpath allready exists
+            # check if fullpath already exists
+            placeholders.fullpath = os.path.join(
+                placeholders.directory, filename)
             while os.path.isfile(placeholders.fullpath):
                 placeholders.filename = placeholders.filename + '_'
                 placeholders.fullpath = os.path.join(
