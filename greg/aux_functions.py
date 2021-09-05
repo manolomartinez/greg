@@ -328,23 +328,3 @@ def pretty_print(session, feed):
     else:
         print("You don't have a feed called {}.".format(feed), file=sys.stderr,
               flush=True)
-
-
-def substitute_placeholders(inputstring, placeholders):
-    """
-    Take a string with placeholders, and return the strings with substitutions.
-    """
-    newst = inputstring.format(link=placeholders.link,
-                               filename=placeholders.filename,
-                               directory=placeholders.directory,
-                               fullpath=placeholders.fullpath,
-                               title=placeholders.title,
-                               filename_title=placeholders.filename_title,
-                               date=placeholders.date_string(),
-                               podcasttitle=placeholders.podcasttitle,
-                               filename_podcasttitle=
-                               placeholders.filename_podcasttitle,
-                               name=placeholders.name,
-                               subtitle=placeholders.sanitizedsubtitle,
-                               entrysummary=placeholders.entrysummary)
-    return newst
