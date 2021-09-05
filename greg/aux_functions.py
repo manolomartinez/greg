@@ -249,9 +249,9 @@ def download_handler(feed, placeholders):
             placeholders.fullpath = os.path.join(
                 placeholders.directory, filename)
             while os.path.isfile(placeholders.fullpath):
-                placeholders.filename = placeholders.filename + '_'
+                filename = filename + '_'
                 placeholders.fullpath = os.path.join(
-                    placeholders.directory, placeholders.filename)
+                    placeholders.directory, filename)
             # write content to file
             with open(placeholders.fullpath,'wb') as fout:
                 fout.write(fin.read())
