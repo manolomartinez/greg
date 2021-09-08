@@ -107,9 +107,12 @@ def remove(args):
     session = c.Session(args)
     if not args["name"] in session.feeds:
         sys.exit("You don't have a feed with that name.")
-    inputtext = ("Are you sure you want to remove the {} "
-                 "feed? (y/N) ").format(args["name"])
-    reply = input(inputtext)
+    if not args['force']:
+        inputtext = ("Are you sure you want to remove the {} "
+                     "feed? (y/N) ").format(args["name"])
+        reply = input(inputtext)
+    else:
+        reply = "y"
     if reply != "y" and reply != "Y":
         return 0
     else:
