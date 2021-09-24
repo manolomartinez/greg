@@ -27,11 +27,10 @@ import time
 import unicodedata
 import string
 import json
-from urllib.request import urlopen
-from urllib.error import URLError
 
 from pkg_resources import resource_filename
 import feedparser
+import requests
 
 try:  # EyeD3 is an optional dependency
     import eyed3
@@ -239,10 +238,9 @@ def download_handler(feed, placeholders):
     """
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
-        with urlopen(placeholders.link) as fin:
+        with requests.get(placeholders.link) as fin:
             # check if request went ok
-            if fin.getcode() != 200:
-                raise URLError
+            fin.raise_for_status()
             # check if fullpath allready exists
             while os.path.isfile(placeholders.fullpath):
                 placeholders.filename = placeholders.filename + '_'
@@ -250,14 +248,16 @@ def download_handler(feed, placeholders):
                     placeholders.directory, placeholders.filename)
             # write content to file
             with open(placeholders.fullpath,'wb') as fout:
-                fout.write(fin.read())
+                fout.write(fin.content)
     else:
         value_list = shlex.split(value)
         instruction_list = [substitute_placeholders(part, placeholders) for
                             part in value_list]
         returncode = subprocess.call(instruction_list)
         if returncode:
-            raise URLError
+            print("There was a problem with your download handler:"
+                    "{}".format(returncode), file=sys.stderr, flush=True)
+
 
 
 def parse_feed_info(infofile):
