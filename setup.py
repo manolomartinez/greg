@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
     name='Greg',
     version='0.4.8',
-    install_requires=['feedparser'],
+    install_requires=['feedparser', 'requests'],
     extras_requires={'tagging' : ['eyeD3']},
     description='A command-line podcast aggregator',
     author='Manolo Martínez',
