@@ -374,3 +374,22 @@ class Placeholders:
     def date_string(self):
         date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")
         return time.strftime(date_format, self.date)
+
+    def substitute(self, inputstring):
+        """
+        Take a string with placeholders, and return the strings with substitutions.
+        """
+        newst = inputstring.format(link=self.link,
+                                   filename=self.filename,
+                                   directory=self.directory,
+                                   fullpath=self.fullpath,
+                                   title=self.title,
+                                   filename_title=self.filename_title,
+                                   date=self.date_string(),
+                                   podcasttitle=self.podcasttitle,
+                                   filename_podcasttitle=
+                                   self.filename_podcasttitle,
+                                   name=self.name,
+                                   subtitle=self.sanitizedsubtitle,
+                                   entrysummary=self.entrysummary)
+        return newst

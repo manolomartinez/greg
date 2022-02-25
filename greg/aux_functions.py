@@ -137,8 +137,7 @@ def check_directory(placeholders):
     elif "yes" in subdirectory:
         subdnametemplate = feed.retrieve_config(
             "subdirectory_name", "{podcasttitle}")
-        subdname = substitute_placeholders(
-            subdnametemplate, placeholders)
+        subdname = placeholders.substitute(subdnametemplate)
         placeholders.directory = os.path.join(download_path, subdname)
     ensure_dir(placeholders.directory)
     placeholders.fullpath = os.path.join(
@@ -173,7 +172,7 @@ def tag(placeholders):
     """
     # We first recover the name of the file to be tagged...
     template = placeholders.feed.retrieve_config("file_to_tag", "{filename}")
-    filename = substitute_placeholders(template, placeholders)
+    filename = placeholders.substitute(template)
     podpath = os.path.join(placeholders.directory, filename)
     # ... and this is it
 
@@ -191,7 +190,7 @@ def tag(placeholders):
     except configparser.NoSectionError:
         pass
     for tag in tagdict:
-        metadata = substitute_placeholders(tagdict[tag], placeholders)
+        metadata = placeholders.substitute(tagdict[tag])
         tagdict[tag] = metadata
     file_to_tag = eyed3.load(podpath)
     if file_to_tag.tag == None:
@@ -211,7 +210,7 @@ def tag(placeholders):
 
 def filtercond(placeholders):
     template = placeholders.feed.retrieve_config("filter", "True")
-    condition = substitute_placeholders(template, placeholders)
+    condition = placeholders.substitute(template)
     return eval(condition)
 
 
@@ -239,21 +238,25 @@ def download_handler(feed, placeholders):
     """
     value = feed.retrieve_config('downloadhandler', 'greg')
     if value == 'greg':
+        filename_placeholders = feed.retrieve_config('downloaded_filename', '{filename}')
+        filename = placeholders.substitute(filename_placeholders)
         with urlopen(placeholders.link) as fin:
             # check if request went ok
             if fin.getcode() != 200:
                 raise URLError
-            # check if fullpath allready exists
+            # check if fullpath already exists
+            placeholders.fullpath = os.path.join(
+                placeholders.directory, filename)
             while os.path.isfile(placeholders.fullpath):
-                placeholders.filename = placeholders.filename + '_'
+                filename = filename + '_'
                 placeholders.fullpath = os.path.join(
-                    placeholders.directory, placeholders.filename)
+                    placeholders.directory, filename)
             # write content to file
             with open(placeholders.fullpath,'wb') as fout:
                 fout.write(fin.read())
     else:
         value_list = shlex.split(value)
-        instruction_list = [substitute_placeholders(part, placeholders) for
+        instruction_list = [placeholders.substitute(part) for
                             part in value_list]
         returncode = subprocess.call(instruction_list)
         if returncode:
@@ -324,23 +327,3 @@ def pretty_print(session, feed):
     else:
         print("You don't have a feed called {}.".format(feed), file=sys.stderr,
               flush=True)
-
-
-def substitute_placeholders(inputstring, placeholders):
-    """
-    Take a string with placeholders, and return the strings with substitutions.
-    """
-    newst = inputstring.format(link=placeholders.link,
-                               filename=placeholders.filename,
-                               directory=placeholders.directory,
-                               fullpath=placeholders.fullpath,
-                               title=placeholders.title,
-                               filename_title=placeholders.filename_title,
-                               date=placeholders.date_string(),
-                               podcasttitle=placeholders.podcasttitle,
-                               filename_podcasttitle=
-                               placeholders.filename_podcasttitle,
-                               name=placeholders.name,
-                               subtitle=placeholders.sanitizedsubtitle,
-                               entrysummary=placeholders.entrysummary)
-    return newst
