@@ -116,6 +116,8 @@ parser_download.set_defaults(func=commands.download)
 parser_remove = subparsers.add_parser('remove', help='removes feed(s)')
 parser_remove.add_argument('name', help='the name of the feed you want to\
                            remove')
+parser_remove.add_argument('-f', '--force', help='remove without\
+                            asking for confirmation', action='store_true')
 parser_remove.set_defaults(func=commands.remove)
 
 # create the parser for the 'retrieveglobalconf' command
