@@ -242,9 +242,9 @@ def download_handler(feed, placeholders):
             fin.raise_for_status()
             # check if fullpath allready exists
             while os.path.isfile(placeholders.fullpath):
-                filename = filename + '_'
+                placeholders.filename = placeholders.filename + '_'
                 placeholders.fullpath = os.path.join(
-                    placeholders.directory, filename)
+                    placeholders.directory, placeholders.filename)
             # write content to file
             with open(placeholders.fullpath,'wb') as fout:
                 fout.write(fin.content)
