@@ -174,7 +174,21 @@ def tag(placeholders):
     filename = placeholders.substitute(template)
     podpath = os.path.join(placeholders.directory, filename)
     # ... and this is it
-
+    # We also retrieve the path of a cover image, if there is one
+    coverart = placeholders.feed.retrieve_config("coverart", False)
+    if coverart:
+        import mimetypes
+        coverart_filename = substitute_placeholders(coverart, placeholders)
+        if not os.path.exists(coverart_filename):
+            print("""The file that I was supposed to use as cover art does not
+                    exist.""", file=sys.stderr, flush=True)
+            coverart = False
+        else:
+            coverart_mime = mimetypes.guess_type(coverart_filename)[0]
+            if not coverart_mime:
+                print("""I couldn't guess the mimetype of this file, please use a
+                        more perspicuous extension""", file=sys.stderr, flush=True)
+                coverart = False
     # now we create a dictionary of tags and values
     tagdict = placeholders.feed.defaulttagdict  # these are the defaults
     try:  # We do as if there was a section with potential tag info
@@ -203,8 +217,12 @@ def tag(placeholders):
                 setattr(file_to_tag.tag, mytag, tagdict[mytag])
         except AttributeError:
             setattr(file_to_tag.tag, mytag, tagdict[mytag])
+    if coverart:
+        with open(coverart_filename, 'rb') as imagefile:
+            image = imagefile.read()
+        file_to_tag.tag.images.set(
+                type_=3, img_data=image, mime_type=coverart_mime)
     file_to_tag.tag.save()
-    
 
 
 def filtercond(placeholders):
