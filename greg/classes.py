@@ -371,6 +371,7 @@ class Placeholders:
         self.name = feed.name
         self.date = tuple(entry.linkdate)
         self.itunes_episode = entry.get('itunes_episode')
+        self.item_description = entry.get('description')
 
     def date_string(self):
         date_format = self.feed.retrieve_config("date_format", "%Y-%m-%d")
@@ -393,5 +394,6 @@ class Placeholders:
                                    name=self.name,
                                    subtitle=self.sanitizedsubtitle,
                                    entrysummary=self.entrysummary,
-                                   itunes_episode = self.itunes_episode)
+                                   itunes_episode = self.itunes_episode,
+                                   item_description = self.item_description)
         return newst
