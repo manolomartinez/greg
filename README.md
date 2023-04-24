@@ -164,7 +164,7 @@ Let's add a video podcast
 
     greg add TEDTalks http://feeds.feedburner.com/TEDTalks_video
 
-By default, Greg only donwloads audio files (in fact, files that have "audio"
+By default, Greg only downloads audio files (in fact, files that have "audio"
 as part of their type). In order to download the right file in TEDTalks, then,
 you need to change that in the config file. Again, add a section:
 
